@@ -23,7 +23,11 @@
 
 #include <CLMarkovPassGen.h>
 
+#ifdef WIN32
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>     // ntohl, ntohs
+#endif
 #include <cstdlib>         // atoi, qsort
 
 #include <sstream>

@@ -8,15 +8,12 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 
 #set(CMAKE_CXX_FLAGS "-pthread")
 
-find_package( OpenCL REQUIRED )
-
 add_definitions( -std=c++11 )
 add_definitions( -DNDEBUG )
 
 SET(CMAKE_BUILD_TYPE Release)
 #SET(CMAKE_BUILD_TYPE Debug)
 
-include_directories( ${OPENCL_INCLUDE_DIRS} )
 add_subdirectory(src)
 
 file(COPY src/CLMarkovPassGen.cl DESTINATION bin/kernels/)
