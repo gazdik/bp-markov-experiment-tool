@@ -39,7 +39,7 @@ using namespace std;
 struct Options : Runner::Options
 {
   bool help = false;
-  bool verbose = false;
+//  bool verbose = false;
   bool list_platforms = false;
 };
 

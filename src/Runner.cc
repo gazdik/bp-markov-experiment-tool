@@ -30,7 +30,7 @@
 using namespace std;
 
 Runner::Runner(Options & options) :
-    _gws { options.gws }
+    _gws { options.gws }, _verbose { options.verbose }
 {
   _passgen = new CLMarkovPassGen { options };
   _cracker = new Cracker { options };
@@ -44,7 +44,7 @@ void Runner::Run()
 {
   vector<cl::Event> passgen_events;
   vector<cl::Event> cracker_events;
-  while (_flag == 0)
+  while (_flag == FLAG_NONE)
   {
     passgen_events.clear();
     cracker_events.clear();
@@ -71,75 +71,77 @@ void Runner::Run()
     }
 
     _command_queues[0].enqueueReadBuffer(_flag_buffer, CL_TRUE, 0,
-                                         sizeof(cl_uchar), &_flag,
+                                         sizeof(_flag), &_flag,
                                          &cracker_events);
+
+    if (_verbose)
+    {
+      if (_flag == FLAG_CRACKED || _flag == FLAG_CRACKED_END)
+      {
+        _command_queues[0].enqueueReadBuffer(_passwords_buffers[0], CL_TRUE, 0,
+                                             _passwords_size * sizeof(cl_uchar),
+                                             _passwords, &cracker_events);
+
+        for (int i = 0; i < _gws * _command_queues.size(); i++)
+        {
+          unsigned index = i * _passwords_entry_size;
+          unsigned length = _passwords[index];
+
+          if (length == 0)
+            continue;
+
+          for (int j = 1; j <= length; j++)
+          {
+            cout << (char) _passwords[index + j];
+          }
+          cout << "\n";
+        }
+
+      }
+    }
 
     if (_flag == FLAG_CRACKED)
     {
-      _flag = 0;
+      _flag = FLAG_NONE;
       _command_queues[0].enqueueWriteBuffer(_flag_buffer, CL_FALSE, 0,
                                             sizeof(_flag), &_flag);
     }
-
-//    if (_flag == FLAG_CRACKED || _flag == FLAG_CRACKED_END)
-//    {
-//      _command_queues[0].enqueueReadBuffer(_passwords_buffers[0], CL_TRUE, 0,
-//                                           _passwords_size * sizeof(cl_uchar),
-//                                           _passwords, &cracker_events);
-//
-//      for (int i = 0; i < _gws * _command_queues.size(); i++)
-//      {
-//        unsigned index = i * _passwords_entry_size;
-//        unsigned length = _passwords[index];
-//
-//        if (length == 0)
-//          continue;
-//
-//        _found++;
-//
-////        for (int j = 1; j <= length; j++)
-////        {
-////          cout << (char) _passwords[index + j];
-////        }
-////        cout << "\n";
-//      }
-//
-//      if (_flag == FLAG_CRACKED)
-//      {
-//        _flag = 0;
-//        _command_queues[0].enqueueWriteBuffer(_flag_buffer, CL_FALSE, 0,
-//                                              sizeof(_flag), &_flag);
-//      }
-//    }
-
   }
 
-  cout << "Found: " << _found << endl;
+  _command_queues[0].enqueueReadBuffer(_found_buffer, CL_TRUE, 0,
+                                       _found_buffer_size, _found, &cracker_events);
 
+
+  unsigned found = 0;
+  for (int i = 0; i < _found_buffer_items; i++)
+  {
+    found += _found[i];
+  }
+  cout << "Found: " << found << endl;
 }
 
 void Runner::createContext(unsigned platform_number)
 {
   std::vector<cl::Platform> platform_list;
 
-  // Get list of all available platforms
+// Get list of all available platforms
   cl::Platform::get(&platform_list);
 
-  // Get list of all devices available on platform
+// Get list of all devices available on platform
   platform_list[platform_number].getDevices( CL_DEVICE_TYPE_GPU, &_devices);
 
-  // Create context
+// Create context
   cl_context_properties context_properties[] = {
   CL_CONTEXT_PLATFORM,
       (cl_context_properties) (platform_list[platform_number])(), 0 };
   _context = cl::Context { CL_DEVICE_TYPE_ALL, context_properties };
 
-  // TODO Remove
+// TODO Remove
   cl::Device device = _devices[0];
   _devices.clear();
   _devices.push_back(device);
 
-  // Create command queues
+// Create command queues
   for (auto & device : _devices)
   {
     cl::CommandQueue queue { _context, device };
@@ -155,22 +157,22 @@ Runner::~Runner()
 
 void Runner::initGenerator()
 {
-  // Calculate step for generator
+// Calculate step for generator
   cl_uint step = _gws * _devices.size();
 
-  // Get kernel source for generator
+// Get kernel source for generator
   ifstream source_file { _passgen->GetKernelSource(), ifstream::in };
   if (not source_file.is_open())
     throw invalid_argument { "Kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
 
-  // Create and build program
+// Create and build program
   cl::Program program { _context, source, true };
 //  passgen_program.build("-Werror -g -s \"/home/gazdik/Documents/FIT/IBP/workspace/clMarkovPassGen/bin/kernels/CLMarkovPassGen.cl\"");
   program.build("-Werror");
 
-  // Create kernel's memory objects
+// Create kernel's memory objects
   _passwords_entry_size = _passgen->MaxPasswordLength() + 1;
   _passwords_size = _passwords_entry_size * _gws * _devices.size();
   _passwords = new cl_uchar[_passwords_size];
@@ -178,15 +180,15 @@ void Runner::initGenerator()
 
   size_t passwords_buffer_size = (_passgen->MaxPasswordLength() + 1)
       * sizeof(cl_uchar) * _gws;
-  cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE
-      | CL_MEM_COPY_HOST_PTR, passwords_buffer_size * _devices.size(),
-      _passwords };
+  cl::Buffer passwords_buffer { _context,
+  CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, passwords_buffer_size
+      * _devices.size(), _passwords };
   _passwords_buffers.push_back(passwords_buffer);
 
   _flag_buffer = cl::Buffer { _context,
   CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, sizeof(_flag), &_flag };
 
-  // If there is more devices than just one, create also subbuffers
+// If there is more devices than just one, create also subbuffers
   for (int i = 1; i < _devices.size(); i++)
   {
     cl_buffer_region passwords_region = { passwords_buffer_size * i,
@@ -197,7 +199,7 @@ void Runner::initGenerator()
     _passwords_buffers.push_back(passwords_subbuffer);
   }
 
-  // Create kernels
+// Create kernels
   for (int i = 0; i < _devices.size(); i++)
   {
     cl::Kernel kernel { program, _passgen->GetKernelName().c_str() };
@@ -210,7 +212,7 @@ void Runner::initGenerator()
     _passgen_kernels.push_back(kernel);
   }
 
-  // Initialize generator's kernel
+// Initialize generator's kernel
   for (int i = 0; i < _passgen_kernels.size(); i++)
   {
     _passgen->InitKernel(_passgen_kernels[i], _command_queues[i], _context,
@@ -220,19 +222,36 @@ void Runner::initGenerator()
 
 void Runner::initCracker()
 {
-  // Get kernel source for generator
+// Get kernel source for generator
   ifstream source_file { _cracker->GetKernelSource(), ifstream::in };
   if (not source_file.is_open())
     throw invalid_argument { "Cracker's kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
 
-  // Create and build program
+// Create and build program
   cl::Program program { _context, source, true };
 //  passgen_program.build("-Werror -g -s \"/home/gazdik/Documents/FIT/IBP/workspace/clMarkovPassGen/bin/kernels/CLMarkovPassGen.cl\"");
   program.build("-Werror");
 
-  // Create kernels
+// Create kernel's memory objects
+  _found_buffer_items = _gws * _devices.size();
+  _found_buffer_size = _found_buffer_items * sizeof(cl_uint);
+  _found = new cl_uint[_found_buffer_size];
+  memset(_found, 0, sizeof(cl_uint) * _found_buffer_size);
+
+  _found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE
+      | CL_MEM_COPY_HOST_PTR, _found_buffer_size, _found };
+
+  // TODO
+  // If there is more devices than just one, create also subbuffers
+  for (int i = 1; i < _devices.size(); i++)
+  {
+    throw runtime_error { "There is more devices!" };
+
+  }
+
+// Create kernels
   for (int i = 0; i < _devices.size(); i++)
   {
     cl::Kernel kernel { program, _cracker->GetKernelName().c_str() };
@@ -241,11 +260,12 @@ void Runner::initCracker()
     kernel.setArg(0, _passwords_buffers[i]);
     kernel.setArg(1, _passwords_entry_size);
     kernel.setArg(2, _flag_buffer);
+    kernel.setArg(3, _found_buffer);
 
     _cracker_kernels.push_back(kernel);
   }
 
-  // Initialize generator's kernel
+// Initialize generator's kernel
   for (int i = 0; i < _cracker_kernels.size(); i++)
   {
     _cracker->InitKernel(_cracker_kernels[i], _command_queues[i], _context);

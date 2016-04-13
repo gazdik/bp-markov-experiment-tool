@@ -46,6 +46,7 @@ public:
   {
     unsigned gws = 1024;
     unsigned platform = 0;
+    bool verbose = false;
   };
 
   Runner(Options & options);
@@ -58,6 +59,7 @@ private:
   Cracker * _cracker;
 
   unsigned _gws;
+  bool _verbose;
 
   cl::Context _context;
   std::vector<cl::CommandQueue> _command_queues;
@@ -73,7 +75,10 @@ private:
   cl_uchar _flag = FLAG_NONE;
   cl::Buffer _flag_buffer;
 
-  unsigned _found = 0;
+  cl_uint *_found;
+  unsigned _found_buffer_items;
+  cl::Buffer _found_buffer;
+  size_t _found_buffer_size;
 
   void createContext(unsigned platform_number);
   void initGenerator();

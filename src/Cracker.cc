@@ -82,11 +82,11 @@ void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   _hash_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY
       | CL_MEM_COPY_HOST_PTR, hash_table_size, hash_table };
 
-  kernel.setArg(3, _hash_table_buffer);
-  kernel.setArg(4, num_rows);
-  kernel.setArg(5, num_entries);
-  kernel.setArg(6, entry_size);
-  kernel.setArg(7, row_size);
+  kernel.setArg(4, _hash_table_buffer);
+  kernel.setArg(5, num_rows);
+  kernel.setArg(6, num_entries);
+  kernel.setArg(7, entry_size);
+  kernel.setArg(8, row_size);
 }
 
 void Cracker::Debug()

@@ -60,9 +60,9 @@ bool strcmp (__global const uchar *str1, uchar str1_length,
 }
 
 __kernel void cracker (__global uchar *passwords, uint password_entry_size,
-                       __global uchar *flag, __global const uchar *hash_table,
-                       uint num_rows, uint num_entries, uint entry_size,
-                       uint row_size)
+                       __global uchar *flag, __global uint *num_found,
+                       __global const uchar *hash_table, uint num_rows,
+                       uint num_entries, uint entry_size, uint row_size)
 {
   size_t id = get_global_id(0);
 
@@ -94,6 +94,8 @@ __kernel void cracker (__global uchar *passwords, uint password_entry_size,
 
     if (strcmp(password, password_length, entry, entry_length))
     {
+      num_found[id]++;
+
       if (flag[0] == FLAG_END)
         flag[0] = FLAG_CRACKED_END;
       else
