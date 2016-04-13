@@ -17,3 +17,4 @@ SET(CMAKE_BUILD_TYPE Debug)
 add_subdirectory(src)
 
 file(COPY src/CLMarkovPassGen.cl DESTINATION bin/kernels/)
+file(COPY src/Cracker.cl DESTINATION bin/kernels/)

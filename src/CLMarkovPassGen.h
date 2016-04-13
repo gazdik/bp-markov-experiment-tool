@@ -37,35 +37,34 @@ const unsigned MAX_PASS_LENGTH = 64;
 const unsigned CHARSET_SIZE = 256;
 const unsigned ETX = 3;
 
-struct KernelCode
-{
-  std::string file_name;
-  std::string name;
-};
-
-/**
- * Command line options with default values
- */
-struct CLMarkovPassGenOptions
-{
-  std::string stat_file;
-  std::string model = "classic";
-  std::string thresholds = "5";
-  std::string length = "1:64";
-  std::string mask;
-};
-
 class CLMarkovPassGen
 {
 public:
-  CLMarkovPassGen(CLMarkovPassGenOptions & options);
+  /**
+   * Command line options with default values
+   */
+  struct Options
+  {
+    std::string stat_file;
+    std::string model = "classic";
+    std::string thresholds = "5";
+    std::string length = "1:64";
+    std::string mask;
+  };
+
+  CLMarkovPassGen(Options & options);
   ~CLMarkovPassGen();
 
   /**
-   * Get kernel source code
+   * Get path to file with kernel source code
    * @return
    */
-  KernelCode GetKernelCode();
+  std::string GetKernelSource();
+  /**
+   * Get name of kernel function
+   * @return
+   */
+  std::string GetKernelName();
 
   /**
    * Create buffers and set arguments
@@ -74,7 +73,7 @@ public:
    * @param context
    * @param step
    */
-  void InitKernel(cl::Kernel & kernel, cl::CommandQueue & command_queue,
+  void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
                   cl::Context & context, unsigned gws, cl_uint step);
 
   /**
@@ -99,6 +98,9 @@ private:
   {
     CLASSIC = 1, LAYERED = 2
   };
+
+  const std::string _kernel_name = "markovGenerator";
+  const std::string _kernel_source = "kernels/CLMarkovPassGen.cl";
 
   std::string _stat_file;
   std::string _mask;
@@ -140,7 +142,7 @@ private:
   cl::Buffer _permutations_buffer;
 
   void initMemory();
-  void parseOptions(CLMarkovPassGenOptions & options);
+  void parseOptions(Options & options);
 
   static int compareSortElements(const void *p1, const void *p2);
   static bool isValidChar(uint8_t value);

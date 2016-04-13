@@ -22,33 +22,35 @@
  */
 
 #define CHARSET_SIZE 256
+#define FLAG_NONE 0
 #define FLAG_END 1
+#define FLAG_CRACKED 2
+#define FLAG_CRACKED_END 3
 
-__kernel void markovGenerator (__global uchar *passwords, __global uchar *flag,
-                    __global ulong *indexes,
+__kernel void markovGenerator (__global uchar *passwords, uint entry_size,
+                    __global uchar *flag, __global ulong *indexes,
                     __global uchar *markov_table, __constant uint *thresholds,
                     __constant ulong *permutations, uint max_threshold,
-                    uint max_length, uint step)
+                    uint step)
 {
-  // DEBUG
   // for (int i = 0; i < 2; i++)
   // {
-  //   printf("indexes[%d] = %lu\n", i, indexes[i]);
+  //   printf("indexes[%d] = %u\n", i, indexes[i]);
   //   printf("markov_table[%d] = %c\n", i, markov_table[i]);
   //   printf("thresholds[%d] = %u\n", i, thresholds[i]);
   //   printf("permutations[%d] = %lu\n", i, permutations[i]);
   // }
   // printf("max_threshold = %u\n", max_threshold);
-  // printf("max_length = %u\n", max_length);
+  // printf("entry_size %u\n", entry_size);
   // printf("step = %u\n", step);
 
 
-  uint password_length = max_length + 1;
-  // prefetch(passwords, password_length * get_global_size(0));
+  uint max_length = entry_size - 1;
+  // prefetch(passwords, entry_size * get_global_size(0));
 
   size_t id = get_global_id(0);
   ulong global_index = indexes[id];
-  __global uchar *password = passwords + id * password_length;
+  __global uchar *password = passwords + id * entry_size;
 
   // Determine current length according to index
   uint length = 1;

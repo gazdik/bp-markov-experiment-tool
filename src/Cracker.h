@@ -21,63 +21,44 @@
  *
  */
 
-#ifndef RUNNER_H_
-#define RUNNER_H_
+#ifndef CRACKER_H_
+#define CRACKER_H_
+
+#include "HashTable.h"
 
 #define __CL_ENABLE_EXCEPTIONS
 
 #include <CL/cl.hpp>
 
-#include <vector>
 #include <string>
 
-#include "CLMarkovPassGen.h"
-#include "Cracker.h"
-
-#define FLAG_NONE 0
-#define FLAG_END 1
-#define FLAG_CRACKED 2
-#define FLAG_CRACKED_END 3
-
-class Runner
+class Cracker
 {
 public:
-  struct Options : public CLMarkovPassGen::Options, Cracker::Options
+  struct Options
   {
-    unsigned gws = 1024;
-    unsigned platform = 0;
+    std::string dictionary;
   };
 
-  Runner(Options & options);
-  ~Runner();
+  Cracker(Options options);
+  ~Cracker();
 
-  void Run();
+  std::string GetKernelSource();
+  std::string GetKernelName();
+
+  void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
+                  cl::Context & context);
+
+  cl::Buffer _hash_table_buffer;
+
+  void Debug();
 
 private:
-  CLMarkovPassGen * _passgen;
-  Cracker * _cracker;
+  const std::string _kernel_name = "cracker";
+  const std::string _kernel_source = "kernels/Cracker.cl";
 
-  unsigned _gws;
+  HashTable *_hash_table;
 
-  cl::Context _context;
-  std::vector<cl::CommandQueue> _command_queues;
-  std::vector<cl::Kernel> _passgen_kernels;
-  std::vector<cl::Kernel> _cracker_kernels;
-  std::vector<cl::Device> _devices;
-
-  std::vector<cl::Buffer> _passwords_buffers;
-  cl_uchar * _passwords;
-  cl_uint _passwords_entry_size;
-  size_t _passwords_size;
-
-  cl_uchar _flag = FLAG_NONE;
-  cl::Buffer _flag_buffer;
-
-  unsigned _found = 0;
-
-  void createContext(unsigned platform_number);
-  void initGenerator();
-  void initCracker();
 };
 
-#endif /* RUNNER_H_ */
+#endif /* CRACKER_H_ */

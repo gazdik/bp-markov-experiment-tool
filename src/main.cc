@@ -32,10 +32,11 @@
 #include <string>
 
 #include "Runner.h"
+#include "Cracker.h"
 
 using namespace std;
 
-struct Options : RunnerOptions
+struct Options : Runner::Options
 {
   bool help = false;
   bool verbose = false;
@@ -111,6 +112,7 @@ int main(int argc, char *argv[])
         options.gws = atoi(optarg);
         break;
       case 'd':
+        options.dictionary = optarg;
         break;
       case 's':
         options.stat_file = optarg;
@@ -154,12 +156,12 @@ int main(int argc, char *argv[])
     return(1);
   }
 
-  // TODO dictionary
-  if (options.stat_file.empty())
+  if (options.stat_file.empty() || options.dictionary.empty())
   {
     cout << help_msg;
     return (2);
   }
+
 
   try
   {
@@ -168,7 +170,8 @@ int main(int argc, char *argv[])
   }
   catch (cl::Error &e)
   {
-    cerr << e.what() << endl;
+    cerr << "ERROR: " << e.what() << " (" << e.err() << ")" << endl;
+    return(2);
   }
 
 }

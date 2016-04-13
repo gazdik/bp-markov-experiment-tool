@@ -40,8 +40,7 @@
 
 using namespace std;
 
-void CLMarkovPassGen::InitKernel(cl::Kernel& kernel,
-                                 cl::CommandQueue& command_queue,
+void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                                  cl::Context& context, unsigned gws,
                                  cl_uint step)
 {
@@ -56,15 +55,14 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel,
     _permutations_buffer = cl::Buffer { context, CL_MEM_READ_ONLY, (_max_length
         + 1) * sizeof(cl_ulong) };
 
-    command_queue.enqueueWriteBuffer(_markov_table_buffer, CL_TRUE, 0,
-                                     sizeof(cl_uchar) * _markov_table_size,
-                                     _markov_table);
-    command_queue.enqueueWriteBuffer(_thresholds_buffer, CL_TRUE, 0,
-                                     sizeof(cl_uint) * _max_length,
-                                     _thresholds);
-    command_queue.enqueueWriteBuffer(_permutations_buffer, CL_TRUE, 0,
-                                     sizeof(cl_ulong) * (_max_length + 1),
-                                     _permutations);
+    queue.enqueueWriteBuffer(_markov_table_buffer, CL_TRUE, 0,
+                             sizeof(cl_uchar) * _markov_table_size,
+                             _markov_table);
+    queue.enqueueWriteBuffer(_thresholds_buffer, CL_TRUE, 0,
+                             sizeof(cl_uint) * _max_length, _thresholds);
+    queue.enqueueWriteBuffer(_permutations_buffer, CL_TRUE, 0,
+                             sizeof(cl_ulong) * (_max_length + 1),
+                             _permutations);
   }
 
   cl::Buffer indexes_buffer { context, CL_MEM_READ_WRITE, gws * sizeof(cl_ulong) };
@@ -77,22 +75,21 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel,
     _global_index++;
   }
 
-  command_queue.enqueueWriteBuffer(indexes_buffer, CL_TRUE, 0,
-                                   sizeof(cl_ulong) * gws, indexes);
+  queue.enqueueWriteBuffer(indexes_buffer, CL_TRUE, 0, sizeof(cl_ulong) * gws,
+                           indexes);
 
-  kernel.setArg(2, indexes_buffer);
-  kernel.setArg(3, _markov_table_buffer);
-  kernel.setArg(4, _thresholds_buffer);
-  kernel.setArg(5, _permutations_buffer);
-  kernel.setArg(6, _max_threshold);
-  kernel.setArg(7, _max_length);
+  kernel.setArg(3, indexes_buffer);
+  kernel.setArg(4, _markov_table_buffer);
+  kernel.setArg(5, _thresholds_buffer);
+  kernel.setArg(6, _permutations_buffer);
+  kernel.setArg(7, _max_threshold);
   kernel.setArg(8, step);
 
   _indexes_buffers.push_back(indexes_buffer);
   delete[] indexes;
 }
 
-CLMarkovPassGen::CLMarkovPassGen(CLMarkovPassGenOptions& options) :
+CLMarkovPassGen::CLMarkovPassGen(Options & options) :
     _mask { options.mask }, _stat_file { options.stat_file }
 {
   parseOptions(options);
@@ -134,15 +131,6 @@ CLMarkovPassGen::~CLMarkovPassGen()
   delete[] _markov_table;
 }
 
-KernelCode CLMarkovPassGen::GetKernelCode()
-{
-  KernelCode code;
-  code.file_name = "kernels/CLMarkovPassGen.cl";
-  code.name = "markovGenerator";
-
-  return code;
-}
-
 unsigned CLMarkovPassGen::MaxPasswordLength()
 {
   return _max_length;
@@ -153,12 +141,13 @@ int CLMarkovPassGen::compareSortElements(const void* p1, const void* p2)
   const SortElement *e1 = static_cast<const SortElement *>(p1);
   const SortElement *e2 = static_cast<const SortElement *>(p2);
 
-  if (not isValidChar(e1->next_state)) return (1);
+  if (not isValidChar(e1->next_state))
+    return (1);
 
   return (e2->probability - e1->probability);
 }
 
-void CLMarkovPassGen::parseOptions(CLMarkovPassGenOptions& options)
+void CLMarkovPassGen::parseOptions(Options & options)
 {
   stringstream ss;
   string substr;
@@ -417,7 +406,8 @@ std::string CLMarkovPassGen::getPassword()
 
   }
 
-  if (length > _max_length) return (string { "END" });
+  if (length > _max_length)
+    return (string { "END" });
 
   // Convert global index to local index
   uint64_t index = _global_index - _permutations[length - 1];
@@ -480,4 +470,14 @@ bool CLMarkovPassGen::satisfyMask(uint8_t character, char mask)
       return (false);
       break;
   }
+}
+
+std::string CLMarkovPassGen::GetKernelSource()
+{
+  return (_kernel_source);
+}
+
+std::string CLMarkovPassGen::GetKernelName()
+{
+  return (_kernel_name);
 }
