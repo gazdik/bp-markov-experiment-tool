@@ -105,35 +105,7 @@ void HashTable::Debug()
 {
   cout << "Load factor: " << _hash_table.load_factor() << endl;
   cout << "Longest bucket size: " << longestBucketSize() << endl;
-
-  unordered_set<std::string> orig_set;
-  unordered_set<std::string>::hasher orig_hash = orig_set.hash_function();
-
-  hash_func my_hash;
-
-  cout << "Build-in hash function ('hovno'): " << orig_hash("hovno") << endl;
-  cout << "My hash function ('hovno'): " << my_hash("hovno") << endl;
-
-  unsigned n = _hash_table.bucket_count();
-
-  cout << "Hash table has " << n << " buckets." << endl;
-
-  unsigned not_empty;
-  for (int i = 0; i < n; i++)
-  {
-    if (_hash_table.bucket_size(i) > 0)
-    {
-      not_empty = i;
-      break;
-    }
-  }
-
-  string entry = *_hash_table.begin(not_empty);
-  cout << "Bucket #" << not_empty << " contains:" << entry << endl;
-  cout << "Word " << entry << " should be in row " << my_hash(entry) % n
-      << endl;
-  cout << "and not in row " << orig_hash(entry) % n << endl;
-
+  cout << "Total buckets: " << _hash_table.bucket_count() << endl;
 }
 
 unsigned HashTable::GetNumEntries()
@@ -162,4 +134,42 @@ unsigned HashTable::longestBucketSize()
     throw runtime_error { "Hash table is probably empty" };
 
   return (longest_bucket_size);
+}
+
+void HashTable::printTable()
+{
+//unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
+//                              cl_uint& num_entries, cl_uint& entry_size,
+//                              cl_uint& row_size)
+  cl_uchar *hash_table;
+  cl_uint num_rows, num_entries, entry_size, row_size;
+
+  Serialize(&hash_table, num_rows, num_entries, entry_size, row_size);
+  hash_func hash;
+
+  for (int row = 0; row < num_rows; row++)
+  {
+    cl_uchar *table_row = &hash_table[row * row_size];
+
+
+    cout << "Row: " << row << "\n";
+    for (int i = 0; i < num_entries; i++)
+    {
+      cl_uchar *entry = &table_row[i * entry_size + 1];
+      cl_uchar entry_length = entry[-1];
+
+      if (entry_length == 0)
+        break;
+
+      std::string word;
+      for (int i = 0; i < entry_length; i++)
+      {
+        word.insert(word.end(), entry[i]);
+      }
+      unsigned hash_index = hash(word) % num_rows;
+      cout << "[" << hash_index << "] " << word << "\n";
+    }
+  }
+
+
 }

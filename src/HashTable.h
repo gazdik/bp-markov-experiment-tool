@@ -52,9 +52,9 @@ private:
   };
 
   unsigned longestBucketSize();
+  void printTable();
 
   std::unordered_set<std::string, hash_func> _hash_table;
-//  std::unordered_set<std::string> _hash_table;
   cl_uchar *_flat_hash_table = nullptr;
 
   unsigned _max_length = 0;

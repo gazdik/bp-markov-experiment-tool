@@ -52,6 +52,7 @@ Cracker::Cracker(Options options)
     _hash_table->Insert(word);
   }
 
+  _hash_table->Debug();
 }
 
 Cracker::~Cracker()
