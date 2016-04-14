@@ -71,13 +71,19 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
     }
 
     int j = 0;
+    char length;
     for (auto it = _hash_table.begin(i); it != _hash_table.end(i); it++)
     {
       string word = *it;
       entry = &row[j * entry_size];
-      entry[0] = word.length();
 
-      for (int i = 0; i < word.length(); i++)
+      length = word.length();
+      if (length == 0)
+        continue;
+
+      entry[0] = length;
+
+      for (int i = 0; i < length; i++)
       {
         entry[i + 1] = word[i];
       }
