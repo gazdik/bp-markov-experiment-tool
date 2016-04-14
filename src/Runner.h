@@ -62,27 +62,31 @@ private:
   bool _verbose;
 
   cl::Context _context;
-  std::vector<cl::CommandQueue> _command_queues;
-  std::vector<cl::Kernel> _passgen_kernels;
-  std::vector<cl::Kernel> _cracker_kernels;
-  std::vector<cl::Device> _devices;
+  std::vector<cl::CommandQueue> _command_queue;
+  std::vector<cl::Kernel> _passgen_kernel;
+  std::vector<cl::Kernel> _cracker_kernel;
+  std::vector<cl::Device> _device;
 
-  std::vector<cl::Buffer> _passwords_buffers;
+  std::vector<cl::Buffer> _passwords_buffer;
+  size_t _passwords_buffer_size;
   cl_uchar * _passwords;
   cl_uint _passwords_entry_size;
   size_t _passwords_size;
 
-  cl_uchar _flag = FLAG_NONE;
-  cl::Buffer _flag_buffer;
+  cl_uchar *_flags;
+  std::vector<cl::Buffer> _flags_buffer;
+  size_t _flags_buffer_size;
 
   cl_uint *_found;
-  unsigned _found_buffer_items;
-  cl::Buffer _found_buffer;
+  unsigned _found_items;
+  std::vector<cl::Buffer> _found_buffer;
   size_t _found_buffer_size;
 
   void createContext(unsigned platform_number);
   void initGenerator();
   void initCracker();
+
+  void runThread(unsigned thread_number);
 };
 
 #endif /* RUNNER_H_ */
