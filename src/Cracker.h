@@ -38,6 +38,7 @@ public:
   struct Options
   {
     std::string dictionary;
+    float max_load_factor = 1.0;
   };
 
   Cracker(Options options);

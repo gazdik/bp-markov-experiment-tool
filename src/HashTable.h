@@ -18,7 +18,7 @@
 class HashTable
 {
 public:
-  HashTable(unsigned num_words, unsigned average_bucket_size = 1);
+  HashTable(unsigned num_words, float max_load_factor = 1.0);
   ~HashTable();
 
   void Insert(std::string & value);
@@ -32,6 +32,7 @@ public:
 
   // TODO Debug
   void Debug();
+
 
 private:
   class hash_func

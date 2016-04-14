@@ -43,7 +43,7 @@ Cracker::Cracker(Options options)
   dictionary.close();
   dictionary.open(options.dictionary, ifstream::in);
 
-  _hash_table = new HashTable { num_lines };
+  _hash_table = new HashTable { num_lines, options.max_load_factor };
 
   string word;
   while (dictionary.good())

@@ -11,10 +11,11 @@
 
 using namespace std;
 
-HashTable::HashTable(unsigned num_words, unsigned average_bucket_size)
+HashTable::HashTable(unsigned num_words, float max_load_factor)
 {
-  size_t buckets = num_words / average_bucket_size;
+  size_t buckets = num_words;
 
+  _hash_table.max_load_factor(max_load_factor);
   _hash_table.rehash(buckets);
 }
 

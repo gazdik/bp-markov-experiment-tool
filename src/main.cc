@@ -53,6 +53,7 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
     "   -g, --gws               global work size (default 1024)\n"
     "Cracker:\n"
 		"   -d, --dictionary        dictionary with passwords to crack\n"
+    "   --load-factor           maximal load factor for the hash table (default 1) \n"
 		"Generator:\n"
 		"   -s, --statistics        file with statistics\n"
 		"   -t, --thresholds=glob[:pos]\n"
@@ -69,7 +70,6 @@ const struct option long_options[] =
 {
 	{"help", no_argument, 0, 'h'},
 	{"verbose", no_argument, 0, 'v'},
-	{"list-platforms", no_argument, 0, 2},
 	{"dictionary", required_argument, 0, 'd'},
 	{"platform", required_argument, 0, 'p'},
 	{"gws", required_argument, 0, 'g'},
@@ -78,6 +78,8 @@ const struct option long_options[] =
 	{"length", required_argument, 0, 'l'},
 	{"mask", required_argument, 0, 'm'},
 	{"model", required_argument, 0, 1},
+	{"list-platforms", no_argument, 0, 2},
+	{"load-factor", required_argument, 0, 3},
 	{0,0,0,0}
 };
 
@@ -98,6 +100,9 @@ int main(int argc, char *argv[])
         break;
       case 2:
         options.list_platforms = true;
+        break;
+      case 3:
+        options.max_load_factor = atof(optarg);
         break;
       case 'h':
         options.help = true;
