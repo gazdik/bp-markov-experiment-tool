@@ -27,6 +27,10 @@
 
 #include "Runner.h"
 
+#define __CL_ENABLE_EXCEPTIONS
+
+#include <CL/cl.hpp>
+
 using namespace std;
 
 Runner::Runner(Options & options) :
@@ -49,19 +53,21 @@ void Runner::Run()
   pthread_t threads[num_threads];
   thread_args args[num_threads];
 
-  for (unsigned i = 0; i < num_threads; i++)
-  {
-    args[i].runner = this;
-    args[i].thread_number = i;
-    if (pthread_create(&threads[i], nullptr, &Runner::start_thread, &args[i]))
-      throw runtime_error { "pthread_create" };
-  }
+//  for (unsigned i = 0; i < num_threads; i++)
+//  {
+//    args[i].runner = this;
+//    args[i].thread_number = i;
+//    if (pthread_create(&threads[i], nullptr, &Runner::start_thread, &args[i]))
+//      throw runtime_error { "pthread_create" };
+//  }
+//
+//  // Wait for all threads to complete
+//  for (unsigned i = 0; i < num_threads; i++)
+//  {
+//    pthread_join(threads[i], nullptr);
+//  }
 
-  // Wait for all threads to complete
-  for (unsigned i = 0; i < num_threads; i++)
-  {
-    pthread_join(threads[i], nullptr);
-  }
+  runThread(0);
 
   unsigned num_devices = _device.size();
   unsigned found = 0;
@@ -86,16 +92,20 @@ void Runner::createContext(unsigned platform_number)
   // Get list of all devices available on platform
   platform_list[platform_number].getDevices( CL_DEVICE_TYPE_GPU, &_device);
 
-  // Create context
+  // Create contexts for every device in selected platform
   cl_context_properties context_properties[] = {
   CL_CONTEXT_PLATFORM,
       (cl_context_properties) (platform_list[platform_number])(), 0 };
-  _context = cl::Context { CL_DEVICE_TYPE_ALL, context_properties };
+  for (int i = 0; i < _device.size(); i++)
+  {
+    cl::Context context { CL_DEVICE_TYPE_GPU, context_properties };
+    _context.push_back(context);
+  }
 
   // Create command queues
-  for (auto & device : _device)
+  for (int i = 0; i < _device.size(); i++)
   {
-    cl::CommandQueue queue { _context, device };
+    cl::CommandQueue queue { _context[i], _device[i] };
     _command_queue.push_back(queue);
   }
 }
@@ -129,9 +139,14 @@ void Runner::initGenerator()
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
 
+  std::vector<cl::Program> programs;
   // Create and build program
-  cl::Program program { _context, source, true };
-  program.build("-Werror");
+  for (int i = 0; i < num_devices; i++)
+  {
+    cl::Program program { _context[i], source, true };
+    program.build("-Werror");
+    programs.push_back(program);
+  }
 
   // Create kernel's memory objects
   _passwords_entry_size = _passgen->MaxPasswordLength() + 1;
@@ -146,7 +161,7 @@ void Runner::initGenerator()
     memset(passwords, 0, _passwords_size);
     _passwords.push_back(passwords);
 
-    cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE
+    cl::Buffer passwords_buffer { _context[i], CL_MEM_READ_WRITE
         | CL_MEM_COPY_HOST_PTR, _passwords_size, passwords };
     _passwords_buffer.push_back(passwords_buffer);
 
@@ -154,7 +169,7 @@ void Runner::initGenerator()
     memset(flag, 0, _flag_size);
     _flag.push_back(flag);
 
-    cl::Buffer flag_buffer = cl::Buffer { _context,
+    cl::Buffer flag_buffer = cl::Buffer { _context[i],
     CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _flag_size, flag };
     _flag_buffer.push_back(flag_buffer);
   }
@@ -162,7 +177,7 @@ void Runner::initGenerator()
   // Create kernels
   for (int i = 0; i < _device.size(); i++)
   {
-    cl::Kernel kernel { program, _passgen->GetKernelName().c_str() };
+    cl::Kernel kernel { programs[i], _passgen->GetKernelName().c_str() };
 
     // Set password buffer as first argument
     kernel.setArg(0, _passwords_buffer[i]);
@@ -175,7 +190,7 @@ void Runner::initGenerator()
   // Initialize generator's kernel
   for (int i = 0; i < _passgen_kernel.size(); i++)
   {
-    _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context, _gws,
+    _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context[i], _gws,
                          step);
   }
 }
@@ -191,10 +206,15 @@ void Runner::initCracker()
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
 
+  vector<cl::Program> programs;
+
   // Create and build program
-  cl::Program program { _context, source, true };
-  //  passgen_program.build("-Werror -g -s \"/home/gazdik/Documents/FIT/IBP/workspace/clMarkovPassGen/bin/kernels/CLMarkovPassGen.cl\"");
-  program.build("-Werror");
+  for (int i = 0; i < num_devices; i++)
+  {
+    cl::Program program { _context[i], source, true };
+    program.build("-Werror");
+    programs.push_back(program);
+  }
 
   // Create kernel's memory objects
   _cnt_found_num_items = _gws;
@@ -206,7 +226,7 @@ void Runner::initCracker()
     memset(cnt_found, 0, _cnt_found_size);
     _cnt_found.push_back(cnt_found);
 
-    cl::Buffer cnt_found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE
+    cl::Buffer cnt_found_buffer = cl::Buffer { _context[i], CL_MEM_READ_WRITE
         | CL_MEM_COPY_HOST_PTR, _cnt_found_size, cnt_found };
     _cnt_found_buffer.push_back(cnt_found_buffer);
   }
@@ -214,7 +234,7 @@ void Runner::initCracker()
   // Create kernels
   for (int i = 0; i < num_devices; i++)
   {
-    cl::Kernel kernel { program, _cracker->GetKernelName().c_str() };
+    cl::Kernel kernel { programs[i], _cracker->GetKernelName().c_str() };
 
     // Set password buffer as first argument
     kernel.setArg(0, _passwords_buffer[i]);
@@ -228,7 +248,7 @@ void Runner::initCracker()
   // Initialize generator's kernel
   for (int i = 0; i < num_devices; i++)
   {
-    _cracker->InitKernel(_cracker_kernel[i], _command_queue[i], _context);
+    _cracker->InitKernel(_cracker_kernel[i], _command_queue[i], _context[i]);
   }
 }
 

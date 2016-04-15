@@ -50,18 +50,15 @@ public:
   void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
                   cl::Context & context);
 
-  // TODO change
-  cl::Buffer _hash_table_buffer;
-  cl_uchar *_flat_hash_table = nullptr;
-  cl_uint _num_rows, _num_entries, _entry_size, _row_size;
-
-  void Debug();
-
 private:
   const std::string _kernel_name = "cracker";
   const std::string _kernel_source = "kernels/Cracker.cl";
 
-  HashTable *_hash_table;
+  // TODO change
+  std::vector<cl::Buffer> _hash_table_buffer;
+  unsigned _hash_table_size;
+  cl_uchar *_hash_table;
+  cl_uint _num_rows, _num_entries, _entry_size, _row_size;
 
 };
 

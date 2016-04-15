@@ -43,22 +43,29 @@ Cracker::Cracker(Options options)
   dictionary.close();
   dictionary.open(options.dictionary, ifstream::in);
 
-  _hash_table = new HashTable { num_lines, options.max_load_factor };
+  HashTable *hash_table;
+  hash_table = new HashTable { num_lines, options.max_load_factor };
 
   string word;
   while (dictionary.good())
   {
     getline(dictionary, word);
-    _hash_table->Insert(word);
+    hash_table->Insert(word);
   }
 
-  _hash_table->Debug();
+  _hash_table_size = hash_table->Serialize(&_hash_table, _num_rows,
+                                           _num_entries, _entry_size,
+                                           _row_size);
+
+  hash_table->Debug();
+
+  delete hash_table;
+
 }
 
 Cracker::~Cracker()
 {
-  delete _hash_table;
-  delete[] _flat_hash_table;
+  delete[] _hash_table;
 }
 
 std::string Cracker::GetKernelSource()
@@ -74,25 +81,13 @@ std::string Cracker::GetKernelName()
 void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                          cl::Context& context)
 {
-  if (_flat_hash_table == nullptr)
-  {
-    unsigned hash_table_size;
-    hash_table_size = _hash_table->Serialize(&_flat_hash_table, _num_rows,
-                                             _num_entries, _entry_size,
-                                             _row_size);
+  cl::Buffer hash_table_buffer { context, CL_MEM_READ_ONLY
+      | CL_MEM_COPY_HOST_PTR, _hash_table_size, _hash_table };
+  _hash_table_buffer.push_back(hash_table_buffer);
 
-    _hash_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY
-        | CL_MEM_COPY_HOST_PTR, hash_table_size, _flat_hash_table };
-  }
-
-  kernel.setArg(4, _hash_table_buffer);
+  kernel.setArg(4, hash_table_buffer);
   kernel.setArg(5, _num_rows);
   kernel.setArg(6, _num_entries);
   kernel.setArg(7, _entry_size);
   kernel.setArg(8, _row_size);
-}
-
-void Cracker::Debug()
-{
-  _hash_table->Debug();
 }

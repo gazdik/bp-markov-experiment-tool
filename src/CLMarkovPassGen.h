@@ -136,10 +136,10 @@ private:
    */
   cl_uint _max_threshold;
 
-  std::vector<cl::Buffer> _indexes_buffers;
-  cl::Buffer _markov_table_buffer;
-  cl::Buffer _thresholds_buffer;
-  cl::Buffer _permutations_buffer;
+  std::vector<cl::Buffer> _indexes_buffer;
+  std::vector<cl::Buffer> _markov_table_buffer;
+  std::vector<cl::Buffer> _thresholds_buffer;
+  std::vector<cl::Buffer> _permutations_buffer;
 
   void initMemory();
   void parseOptions(Options & options);

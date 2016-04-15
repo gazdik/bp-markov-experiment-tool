@@ -62,7 +62,7 @@ private:
   unsigned _gws;
   bool _verbose;
 
-  cl::Context _context;
+  std::vector<cl::Context> _context;
   std::vector<cl::CommandQueue> _command_queue;
   std::vector<cl::Kernel> _passgen_kernel;
   std::vector<cl::Kernel> _cracker_kernel;
