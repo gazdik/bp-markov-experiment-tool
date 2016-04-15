@@ -87,6 +87,14 @@ private:
   void initCracker();
 
   void runThread(unsigned thread_number);
+
+
+  struct thread_args
+  {
+    Runner *runner;
+    unsigned thread_number;
+  };
+  static void* start_thread(void *arg);
 };
 
 #endif /* RUNNER_H_ */

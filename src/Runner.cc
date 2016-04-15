@@ -24,7 +24,8 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
-#include <thread>
+
+#include <pthread.h>
 
 #include "Runner.h"
 
@@ -44,19 +45,22 @@ Runner::Runner(Options & options) :
 void Runner::Run()
 {
 
-  vector<thread> threads;
+  unsigned num_threads = _device.size();
+  pthread_t threads[num_threads];
+  thread_args args[num_threads];
 
-  // Run function runThread
-  for (unsigned i = 0; i < _device.size(); i++)
+  for (unsigned i = 0; i < num_threads; i++)
   {
-//    threads.push_back(thread(&Runner::runThread, ref(*this), i));
-    threads.push_back(thread(&Runner::runThread, this, i));
+    args[i].runner = this;
+    args[i].thread_number = i;
+    if (pthread_create(&threads[i], nullptr, &Runner::start_thread, &args[i]))
+      throw runtime_error { "pthread_create" };
   }
 
   // Wait for all threads to complete
-  for (auto &i: threads)
+  for (unsigned i = 0; i < num_threads; i++)
   {
-    i.join();
+    pthread_join(threads[i], nullptr);
   }
 
   _command_queue[0].enqueueReadBuffer(_found_buffer[0], CL_TRUE, 0,
@@ -300,4 +304,15 @@ void Runner::runThread(unsigned i)
                                            sizeof(cl_uchar), &_flags[i]);
     }
   }
+}
+
+void* Runner::start_thread(void* arg)
+{
+  thread_args *args = static_cast<thread_args *>(arg);
+
+  args->runner->runThread(args->thread_number);
+
+  pthread_exit(NULL);
+
+  return (nullptr);
 }
