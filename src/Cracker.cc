@@ -58,6 +58,7 @@ Cracker::Cracker(Options options)
 Cracker::~Cracker()
 {
   delete _hash_table;
+  delete[] _flat_hash_table;
 }
 
 std::string Cracker::GetKernelSource()
@@ -73,21 +74,22 @@ std::string Cracker::GetKernelName()
 void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                          cl::Context& context)
 {
-  cl_uchar *hash_table;
-  cl_uint num_rows, num_entries, entry_size, row_size;
-  unsigned hash_table_size = _hash_table->Serialize(&hash_table, num_rows,
-                                                    num_entries, entry_size,
-                                                    row_size);
+  if (_flat_hash_table == nullptr)
+  {
+    unsigned hash_table_size;
+    hash_table_size = _hash_table->Serialize(&_flat_hash_table, _num_rows,
+                                             _num_entries, _entry_size,
+                                             _row_size);
 
-  // Create buffer for hash table
-  _hash_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY
-      | CL_MEM_COPY_HOST_PTR, hash_table_size, hash_table };
+    _hash_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY
+        | CL_MEM_COPY_HOST_PTR, hash_table_size, _flat_hash_table };
+  }
 
   kernel.setArg(4, _hash_table_buffer);
-  kernel.setArg(5, num_rows);
-  kernel.setArg(6, num_entries);
-  kernel.setArg(7, entry_size);
-  kernel.setArg(8, row_size);
+  kernel.setArg(5, _num_rows);
+  kernel.setArg(6, _num_entries);
+  kernel.setArg(7, _entry_size);
+  kernel.setArg(8, _row_size);
 }
 
 void Cracker::Debug()

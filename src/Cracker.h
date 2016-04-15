@@ -50,7 +50,10 @@ public:
   void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
                   cl::Context & context);
 
+  // TODO change
   cl::Buffer _hash_table_buffer;
+  cl_uchar *_flat_hash_table = nullptr;
+  cl_uint _num_rows, _num_entries, _entry_size, _row_size;
 
   void Debug();
 
