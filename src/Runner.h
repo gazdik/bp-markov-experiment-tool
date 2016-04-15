@@ -27,6 +27,7 @@
 #define __CL_ENABLE_EXCEPTIONS
 
 #include <CL/cl.hpp>
+#include <pthread.h>
 
 #include <vector>
 #include <string>
@@ -67,27 +68,29 @@ private:
   std::vector<cl::Kernel> _cracker_kernel;
   std::vector<cl::Device> _device;
 
-  std::vector<cl::Buffer> _passwords_buffer;
-  size_t _passwords_buffer_size;
-  cl_uchar * _passwords;
+  std::vector<cl_uchar *> _passwords;
   cl_uint _passwords_entry_size;
   size_t _passwords_size;
+  unsigned _passwords_num_items;
+  std::vector<cl::Buffer> _passwords_buffer;
 
-  cl_uchar *_flags;
-  std::vector<cl::Buffer> _flags_buffer;
-  size_t _flags_buffer_size;
+  std::vector<cl_uchar *> _flag;
+  size_t _flag_size;
+  std::vector<cl::Buffer> _flag_buffer;
 
-  cl_uint *_found;
-  unsigned _found_items;
-  std::vector<cl::Buffer> _found_buffer;
-  size_t _found_buffer_size;
+  std::vector<cl_uint *> _cnt_found;
+  unsigned _cnt_found_num_items;
+  size_t _cnt_found_size;
+  std::vector<cl::Buffer> _cnt_found_buffer;
 
   void createContext(unsigned platform_number);
   void initGenerator();
   void initCracker();
 
   void runThread(unsigned thread_number);
+  void printCrackedPasswords(unsigned thread_number);
 
+  pthread_mutex_t _mutex_output;
 
   struct thread_args
   {
