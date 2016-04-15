@@ -63,7 +63,6 @@ void Runner::Run()
     pthread_join(threads[i], nullptr);
   }
 
-
   unsigned num_devices = _device.size();
   unsigned found = 0;
 
@@ -140,18 +139,18 @@ void Runner::initGenerator()
   _passwords_size = _passwords_num_items * sizeof(cl_uchar);
 
   _flag_size = sizeof(cl_uchar);
+
   for (int i = 0; i < num_devices; i++)
   {
     cl_uchar *passwords = new cl_uchar[_passwords_num_items];
-    memset(passwords, 0, sizeof(cl_uchar) * _passwords_num_items);
+    memset(passwords, 0, _passwords_size);
     _passwords.push_back(passwords);
 
-    cl::Buffer passwords_buffer { _context,
-    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _passwords_size,
-        passwords };
+    cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE
+        | CL_MEM_COPY_HOST_PTR, _passwords_size, passwords };
     _passwords_buffer.push_back(passwords_buffer);
 
-    cl_uchar *flag = new u_char[_flag_size];
+    cl_uchar *flag = new u_char;
     memset(flag, 0, _flag_size);
     _flag.push_back(flag);
 
@@ -203,13 +202,12 @@ void Runner::initCracker()
 
   for (int i = 0; i < num_devices; i++)
   {
-    cl_uint *cnt_found = new cl_uint[_cnt_found_size];
+    cl_uint *cnt_found = new cl_uint[_cnt_found_num_items];
     memset(cnt_found, 0, _cnt_found_size);
     _cnt_found.push_back(cnt_found);
 
     cl::Buffer cnt_found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE
         | CL_MEM_COPY_HOST_PTR, _cnt_found_size, cnt_found };
-
     _cnt_found_buffer.push_back(cnt_found_buffer);
   }
 
@@ -279,7 +277,7 @@ void Runner::runThread(unsigned i)
     {
       *_flag[i] = FLAG_NONE;
       _command_queue[0].enqueueWriteBuffer(_flag_buffer[i], CL_FALSE, 0,
-                                           sizeof(cl_uchar), _flag[i]);
+                                           _flag_size, _flag[i]);
     }
   }
 
@@ -320,6 +318,4 @@ void* Runner::start_thread(void* arg)
   args->runner->runThread(args->thread_number);
 
   pthread_exit(NULL);
-
-  return (nullptr);
 }
