@@ -139,7 +139,7 @@ void Runner::initGenerator()
   _passwords_num_items = _passwords_entry_size * _gws;
   _passwords_size = _passwords_num_items * sizeof(cl_uchar);
 
-  _flag_size = sizeof(u_char);
+  _flag_size = sizeof(cl_uchar);
   for (int i = 0; i < num_devices; i++)
   {
     cl_uchar *passwords = new cl_uchar[_passwords_num_items];
