@@ -147,7 +147,7 @@ void Runner::initGenerator()
     _passwords.push_back(passwords);
 
     cl::Buffer passwords_buffer { _context,
-    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _passwords_size * _device.size(),
+    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _passwords_size,
         passwords };
     _passwords_buffer.push_back(passwords_buffer);
 
