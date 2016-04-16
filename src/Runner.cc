@@ -59,22 +59,24 @@ void Runner::Run()
     thread_arguments[i].thread_number = i;
   }
 
-  pthread_t threads[num_threads];
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);
   pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
+  std::vector<pthread_t *> threads;
   for (unsigned i = 0; i < num_threads; i++)
   {
-    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &thread_arguments[i]))
+    pthread_t *thread = new pthread_t;
+    if (pthread_create(thread, &attr, &Runner::start_thread, &thread_arguments[i]))
       throw runtime_error { "pthread_create" };
+    threads.push_back(thread);
   }
 
   // Wait for all threads to complete
   for (unsigned i = 0; i < num_threads; i++)
   {
-    if (pthread_join(threads[i], nullptr))
+    if (pthread_join(*threads[i], nullptr))
       throw runtime_error { "pthread_join" };
   }
 
