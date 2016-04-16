@@ -302,7 +302,8 @@ void CLMarkovPassGen::initMemory()
 
 bool CLMarkovPassGen::isValidChar(uint8_t value)
 {
-  return ((value >= 32 && value <= 126) ? true : false);
+//  return ((value >= 32 && value <= 126) ? true : false);
+  return ((value >= 32) ? true : false);
 }
 
 uint64_t CLMarkovPassGen::numPermutations(const unsigned length)
