@@ -81,8 +81,9 @@ std::string Cracker::GetKernelName()
 void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                          cl::Context& context)
 {
-  cl::Buffer hash_table_buffer { context, CL_MEM_READ_ONLY
-      | CL_MEM_COPY_HOST_PTR, _hash_table_size, _hash_table };
+  cl::Buffer hash_table_buffer { context, CL_MEM_READ_ONLY, _hash_table_size };
+  queue.enqueueWriteBuffer(hash_table_buffer, CL_TRUE, 0, _hash_table_size,
+                           _hash_table);
   _hash_table_buffer.push_back(hash_table_buffer);
 
   kernel.setArg(4, hash_table_buffer);
