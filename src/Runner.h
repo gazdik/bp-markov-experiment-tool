@@ -92,7 +92,7 @@ private:
 
   pthread_mutex_t _mutex_output;
 
-  struct thread_args
+  struct ThreadArgs
   {
     Runner *runner;
     unsigned thread_number;

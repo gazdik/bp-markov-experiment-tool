@@ -52,7 +52,7 @@ void Runner::Run()
 
   unsigned num_threads = _device.size();
   pthread_t threads[num_threads];
-  thread_args args[num_threads];
+  ThreadArgs thread_aguments[num_threads];
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);
@@ -60,9 +60,9 @@ void Runner::Run()
 
   for (unsigned i = 0; i < num_threads; i++)
   {
-    args[i].runner = this;
-    args[i].thread_number = i;
-    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &args[i]))
+    thread_aguments[i].runner = this;
+    thread_aguments[i].thread_number = i;
+    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &thread_aguments[i]))
       throw runtime_error { "pthread_create" };
   }
 
@@ -329,7 +329,7 @@ void Runner::printCrackedPasswords(unsigned thread_number)
 
 void* Runner::start_thread(void* arg)
 {
-  thread_args *args = static_cast<thread_args *>(arg);
+  ThreadArgs *args = static_cast<ThreadArgs *>(arg);
 
   args->runner->runThread(args->thread_number);
 
