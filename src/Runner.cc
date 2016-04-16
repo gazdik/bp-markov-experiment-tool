@@ -21,15 +21,16 @@
  *
  */
 
+#define __CL_ENABLE_EXCEPTIONS
+
+#include <pthread.h>
+#include <CL/cl.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
 
 #include "Runner.h"
-
-#define __CL_ENABLE_EXCEPTIONS
-
-#include <CL/cl.hpp>
 
 using namespace std;
 
@@ -52,20 +53,27 @@ void Runner::Run()
   unsigned num_threads = _device.size();
   pthread_t threads[num_threads];
   thread_args args[num_threads];
+  pthread_attr_t attr;
+
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
   for (unsigned i = 0; i < num_threads; i++)
   {
     args[i].runner = this;
     args[i].thread_number = i;
-    if (pthread_create(&threads[i], nullptr, &Runner::start_thread, &args[i]))
+    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &args[i]))
       throw runtime_error { "pthread_create" };
   }
 
   // Wait for all threads to complete
   for (unsigned i = 0; i < num_threads; i++)
   {
-    pthread_join(threads[i], nullptr);
+    if (pthread_join(threads[i], nullptr))
+      throw runtime_error { "pthread_join" };
   }
+
+  pthread_attr_destroy(&attr);
 
   unsigned num_devices = _device.size();
   unsigned found = 0;
