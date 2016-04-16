@@ -51,8 +51,15 @@ void Runner::Run()
 {
 
   unsigned num_threads = _device.size();
+  ThreadArgs thread_arguments[num_threads];
+
+  for (unsigned i = 0; i < num_threads; i++)
+  {
+    thread_arguments[i].runner = this;
+    thread_arguments[i].thread_number = i;
+  }
+
   pthread_t threads[num_threads];
-  ThreadArgs thread_aguments[num_threads];
   pthread_attr_t attr;
 
   pthread_attr_init(&attr);
@@ -60,9 +67,7 @@ void Runner::Run()
 
   for (unsigned i = 0; i < num_threads; i++)
   {
-    thread_aguments[i].runner = this;
-    thread_aguments[i].thread_number = i;
-    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &thread_aguments[i]))
+    if (pthread_create(&threads[i], &attr, &Runner::start_thread, &thread_arguments[i]))
       throw runtime_error { "pthread_create" };
   }
 
