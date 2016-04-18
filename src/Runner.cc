@@ -43,8 +43,6 @@ Runner::Runner(Options & options) :
   createContext(options.platform);
   initGenerator();
   initCracker();
-
-  pthread_mutex_init(&_mutex_output, nullptr);
 }
 
 void Runner::Run()
@@ -296,7 +294,7 @@ void Runner::runThread(unsigned i)
 
 void Runner::printCrackedPasswords(unsigned thread_number)
 {
-  pthread_mutex_lock(&_mutex_output);
+  _mutex_output.lock();
 
   for (int i = 0; i < _gws; i++)
   {
@@ -313,5 +311,5 @@ void Runner::printCrackedPasswords(unsigned thread_number)
     cout << "\n";
   }
 
-  pthread_mutex_unlock(&_mutex_output);
+  _mutex_output.unlock();
 }
