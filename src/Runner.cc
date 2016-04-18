@@ -23,9 +23,9 @@
 
 #define __CL_ENABLE_EXCEPTIONS
 
-#include <pthread.h>
 #include <CL/cl.hpp>
 
+#include <thread>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -50,37 +50,19 @@ Runner::Runner(Options & options) :
 void Runner::Run()
 {
 
+  vector<thread> threads;
   unsigned num_threads = _device.size();
-  ThreadArgs thread_arguments[num_threads];
 
   for (unsigned i = 0; i < num_threads; i++)
   {
-    thread_arguments[i].runner = this;
-    thread_arguments[i].thread_number = i;
-  }
-
-  pthread_attr_t attr;
-
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
-
-  std::vector<pthread_t *> threads;
-  for (unsigned i = 0; i < num_threads; i++)
-  {
-    pthread_t *thread = new pthread_t;
-    if (pthread_create(thread, &attr, &Runner::start_thread, &thread_arguments[i]))
-      throw runtime_error { "pthread_create" };
-    threads.push_back(thread);
+    threads.push_back(thread {&Runner::runThread, this, i});
   }
 
   // Wait for all threads to complete
-  for (unsigned i = 0; i < num_threads; i++)
+  for (auto &i: threads)
   {
-    if (pthread_join(*threads[i], nullptr))
-      throw runtime_error { "pthread_join" };
+    i.join();
   }
-
-  pthread_attr_destroy(&attr);
 
   unsigned num_devices = _device.size();
   unsigned found = 0;
@@ -332,13 +314,4 @@ void Runner::printCrackedPasswords(unsigned thread_number)
   }
 
   pthread_mutex_unlock(&_mutex_output);
-}
-
-void* Runner::start_thread(void* arg)
-{
-  ThreadArgs *args = static_cast<ThreadArgs *>(arg);
-
-  args->runner->runThread(args->thread_number);
-
-  pthread_exit(NULL);
 }

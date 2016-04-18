@@ -91,13 +91,6 @@ private:
   void printCrackedPasswords(unsigned thread_number);
 
   pthread_mutex_t _mutex_output;
-
-  struct ThreadArgs
-  {
-    Runner *runner;
-    unsigned thread_number;
-  };
-  static void* start_thread(void *arg);
 };
 
 #endif /* RUNNER_H_ */
