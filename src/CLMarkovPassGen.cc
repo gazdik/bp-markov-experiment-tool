@@ -66,7 +66,7 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
 
   // Create indexes and copy them into buffer
   cl_ulong *indexes = new cl_ulong[gws];
-  for (int i = 0; i < gws; i++)
+  for (unsigned i = 0; i < gws; i++)
   {
     indexes[i] = _global_index;
     _global_index++;
@@ -278,13 +278,13 @@ void CLMarkovPassGen::initMemory()
   _markov_table = new cl_uchar[_markov_table_size];
 
   unsigned index, index1, index2;
-  for (int p = 0; p < _max_length; p++)
+  for (unsigned p = 0; p < _max_length; p++)
   {
     index1 = p * CHARSET_SIZE * _max_threshold;
-    for (int i = 0; i < CHARSET_SIZE; i++)
+    for (unsigned i = 0; i < CHARSET_SIZE; i++)
     {
       index2 = i * _max_threshold;
-      for (int j = 0; j < _max_threshold; j++)
+      for (unsigned j = 0; j < _max_threshold; j++)
       {
         index = index1 + index2 + j;
         _markov_table[index] = markov_sort_table[p][i][j].next_state;
@@ -305,7 +305,7 @@ uint64_t CLMarkovPassGen::numPermutations(const unsigned length)
 {
   uint64_t result = 1;
 
-  for (int i = 0; i < length; i++)
+  for (unsigned i = 0; i < length; i++)
   {
     result *= _thresholds[i];
   }
@@ -412,7 +412,7 @@ std::string CLMarkovPassGen::getPassword()
   char last_char = 0;
 
   // Create password
-  for (int p = 0; p < length; p++)
+  for (unsigned p = 0; p < length; p++)
   {
     partial_index = index % _thresholds[p];
     index = index / _thresholds[p];

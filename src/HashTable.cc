@@ -59,7 +59,7 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
   unsigned bucket_size;
   cl_uchar *row;
   cl_uchar *entry;
-  for (int i = 0; i < num_rows; i++)
+  for (unsigned i = 0; i < num_rows; i++)
   {
     row = &_flat_hash_table[i * row_size];
 
@@ -71,7 +71,7 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
       continue;
     }
 
-    int j = 0;
+    unsigned j = 0;
     char length;
     for (auto it = _hash_table.begin(i); it != _hash_table.end(i); it++)
     {
@@ -116,7 +116,7 @@ unsigned HashTable::longestBucketSize()
   unsigned longest_bucket_size = 0;
 
   unsigned bucket_size;
-  for (int i = 0; i < num_buckets; i++)
+  for (unsigned i = 0; i < num_buckets; i++)
   {
     bucket_size = _hash_table.bucket_size(i);
     if (bucket_size > longest_bucket_size)
@@ -143,13 +143,13 @@ void HashTable::printTable()
   Serialize(&hash_table, num_rows, num_entries, entry_size, row_size);
   hash_func hash;
 
-  for (int row = 0; row < num_rows; row++)
+  for (unsigned row = 0; row < num_rows; row++)
   {
     cl_uchar *table_row = &hash_table[row * row_size];
 
 
     cout << "Row: " << row << "\n";
-    for (int i = 0; i < num_entries; i++)
+    for (unsigned i = 0; i < num_entries; i++)
     {
       cl_uchar *entry = &table_row[i * entry_size + 1];
       cl_uchar entry_length = entry[-1];

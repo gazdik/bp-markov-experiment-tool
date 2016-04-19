@@ -65,9 +65,9 @@ void Runner::Run()
   unsigned num_devices = _device.size();
   unsigned found = 0;
 
-  for (int d = 0; d < num_devices; d++)
+  for (unsigned d = 0; d < num_devices; d++)
   {
-    for (int i = 0; i < _cnt_found_num_items; i++)
+    for (unsigned i = 0; i < _cnt_found_num_items; i++)
     {
       found += _cnt_found[d][i];
     }
@@ -139,7 +139,7 @@ void Runner::initGenerator()
 
   _flag_size = sizeof(cl_uchar);
 
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     cl_uchar *passwords = new cl_uchar[_passwords_num_items];
     memset(passwords, 0, _passwords_size);
@@ -201,7 +201,7 @@ void Runner::initCracker()
   _cnt_found_num_items = _gws;
   _cnt_found_size = _cnt_found_num_items * sizeof(cl_uint);
 
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     cl_uint *cnt_found = new cl_uint[_cnt_found_num_items];
     memset(cnt_found, 0, _cnt_found_size);
@@ -215,7 +215,7 @@ void Runner::initCracker()
   }
 
   // Create kernels
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     cl::Kernel kernel { program, _cracker->GetKernelName().c_str() };
 
@@ -229,7 +229,7 @@ void Runner::initCracker()
   }
 
   // Initialize generator's kernel
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     _cracker->InitKernel(_cracker_kernel[i], _command_queue[i], _context);
   }
@@ -296,7 +296,7 @@ void Runner::printCrackedPasswords(unsigned thread_number)
 {
   _mutex_output.lock();
 
-  for (int i = 0; i < _gws; i++)
+  for (unsigned i = 0; i < _gws; i++)
   {
     unsigned index = i * _passwords_entry_size;
     unsigned length = _passwords[thread_number][index];
@@ -304,7 +304,7 @@ void Runner::printCrackedPasswords(unsigned thread_number)
     if (length == 0)
       continue;
 
-    for (int j = 1; j <= length; j++)
+    for (unsigned j = 1; j <= length; j++)
     {
       cout << (char) _passwords[thread_number][index + j];
     }
