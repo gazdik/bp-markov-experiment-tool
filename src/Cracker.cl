@@ -30,7 +30,7 @@
 
 uint table_row_index (__global uchar *password, uchar password_length, uint num_rows)
 {
-  ulong hash = 5381;
+  uint hash = 5381;
 
   for (int i = 0; i < password_length; i++)
   {

@@ -10,6 +10,8 @@
 
 #define __CL_ENABLE_EXCEPTIONS
 
+#include <cstdint>
+
 #include <string>
 #include <unordered_set>
 
@@ -39,8 +41,7 @@ private:
   public:
     size_t operator()(const std::string &value) const
     {
-      // TODO change to explicit 64bit integer
-      size_t hash = 5381;
+      uint32_t hash = 5381;
 
       for (auto c : value)
       {
