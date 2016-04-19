@@ -106,6 +106,8 @@ void HashTable::Debug()
   cout << "Load factor: " << _hash_table.load_factor() << endl;
   cout << "Longest bucket size: " << longestBucketSize() << endl;
   cout << "Total buckets: " << _hash_table.bucket_count() << endl;
+
+  printTable();
 }
 
 unsigned HashTable::longestBucketSize()

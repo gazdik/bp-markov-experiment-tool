@@ -86,6 +86,11 @@ public:
    */
   std::string getPassword();
 
+  /**
+   * TODO DEBUG
+   */
+  void printMarkovTable();
+
 private:
 
   struct SortElement

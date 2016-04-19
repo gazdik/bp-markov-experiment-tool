@@ -120,6 +120,7 @@ CLMarkovPassGen::CLMarkovPassGen(Options & options) :
   cout << "Mask: " << _mask << endl;
 
   cout << "Maximal threshold: " << _max_threshold << endl;
+  printMarkovTable();
 }
 
 CLMarkovPassGen::~CLMarkovPassGen()
@@ -477,4 +478,24 @@ std::string CLMarkovPassGen::GetKernelSource()
 std::string CLMarkovPassGen::GetKernelName()
 {
   return (_kernel_name);
+}
+
+void CLMarkovPassGen::printMarkovTable()
+{
+  for (unsigned p = 0; p < _max_length; p++)
+  {
+    cout << "===============  P=" << p <<  " ================" << endl;
+    for (unsigned i = 32; i < 127; i++)
+    {
+      for (unsigned j = 0; j < _max_threshold; j++)
+      {
+        char c;
+        c = _markov_table[p * CHARSET_SIZE * _max_threshold + i * _max_threshold
+            + j];
+
+        cout << c;
+      }
+      cout << endl;
+    }
+  }
 }
