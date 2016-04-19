@@ -138,10 +138,21 @@ int CLMarkovPassGen::compareSortElements(const void* p1, const void* p2)
   const SortElement *e1 = static_cast<const SortElement *>(p1);
   const SortElement *e2 = static_cast<const SortElement *>(p2);
 
-  if (!isValidChar(e1->next_state))
+  if (!isValidChar(e1->next_state) && isValidChar(e2->next_state))
     return (1);
 
-  return (e2->probability - e1->probability);
+  if (isValidChar(e1->next_state) && !isValidChar(e2->next_state))
+	  return (-1);
+
+  if (!isValidChar(e1->next_state) && !isValidChar(e2->next_state))
+    return (e2->next_state - e1->next_state);
+
+  int result = e2->probability - e1->probability;
+
+  if (result == 0)
+    return (e2->next_state - e1->next_state);
+
+  return (result);
 }
 
 void CLMarkovPassGen::parseOptions(Options & options)
