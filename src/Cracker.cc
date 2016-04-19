@@ -43,21 +43,29 @@ Cracker::Cracker(Options options)
   dictionary.close();
   dictionary.open(options.dictionary, ifstream::in);
 
-  _hash_table = new HashTable { num_lines, options.max_load_factor };
+  HashTable *hash_table;
+  hash_table = new HashTable { num_lines, options.max_load_factor };
 
   string word;
   while (dictionary.good())
   {
     getline(dictionary, word);
-    _hash_table->Insert(word);
+    hash_table->Insert(word);
   }
 
-  _hash_table->Debug();
+  _hash_table_size = hash_table->Serialize(&_hash_table, _num_rows,
+                                           _num_entries, _entry_size,
+                                           _row_size);
+
+  hash_table->Debug();
+
+  delete hash_table;
+
 }
 
 Cracker::~Cracker()
 {
-  delete _hash_table;
+  delete[] _hash_table;
 }
 
 std::string Cracker::GetKernelSource()
@@ -73,24 +81,14 @@ std::string Cracker::GetKernelName()
 void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                          cl::Context& context)
 {
-  cl_uchar *hash_table;
-  cl_uint num_rows, num_entries, entry_size, row_size;
-  unsigned hash_table_size = _hash_table->Serialize(&hash_table, num_rows,
-                                                    num_entries, entry_size,
-                                                    row_size);
+  cl::Buffer hash_table_buffer { context, CL_MEM_READ_ONLY, _hash_table_size };
+  queue.enqueueWriteBuffer(hash_table_buffer, CL_TRUE, 0, _hash_table_size,
+                           _hash_table);
+  _hash_table_buffer.push_back(hash_table_buffer);
 
-  // Create buffer for hash table
-  _hash_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY
-      | CL_MEM_COPY_HOST_PTR, hash_table_size, hash_table };
-
-  kernel.setArg(4, _hash_table_buffer);
-  kernel.setArg(5, num_rows);
-  kernel.setArg(6, num_entries);
-  kernel.setArg(7, entry_size);
-  kernel.setArg(8, row_size);
-}
-
-void Cracker::Debug()
-{
-  _hash_table->Debug();
+  kernel.setArg(4, hash_table_buffer);
+  kernel.setArg(5, _num_rows);
+  kernel.setArg(6, _num_entries);
+  kernel.setArg(7, _entry_size);
+  kernel.setArg(8, _row_size);
 }

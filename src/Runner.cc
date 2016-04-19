@@ -21,6 +21,11 @@
  *
  */
 
+#define __CL_ENABLE_EXCEPTIONS
+
+#include <CL/cl.hpp>
+
+#include <thread>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -38,38 +43,31 @@ Runner::Runner(Options & options) :
   createContext(options.platform);
   initGenerator();
   initCracker();
-
-  pthread_mutex_init(&_mutex_output, nullptr);
 }
 
 void Runner::Run()
 {
 
+  vector<thread> threads;
   unsigned num_threads = _device.size();
-  pthread_t threads[num_threads];
-  thread_args args[num_threads];
 
   for (unsigned i = 0; i < num_threads; i++)
   {
-    args[i].runner = this;
-    args[i].thread_number = i;
-    if (pthread_create(&threads[i], nullptr, &Runner::start_thread, &args[i]))
-      throw runtime_error { "pthread_create" };
+    threads.push_back(thread {&Runner::runThread, this, i});
   }
 
   // Wait for all threads to complete
-  for (unsigned i = 0; i < num_threads; i++)
+  for (auto &i: threads)
   {
-    pthread_join(threads[i], nullptr);
+    i.join();
   }
-
 
   unsigned num_devices = _device.size();
   unsigned found = 0;
 
-  for (int d = 0; d < num_devices; d++)
+  for (unsigned d = 0; d < num_devices; d++)
   {
-    for (int i = 0; i < _cnt_found_num_items; i++)
+    for (unsigned i = 0; i < _cnt_found_num_items; i++)
     {
       found += _cnt_found[d][i];
     }
@@ -87,16 +85,16 @@ void Runner::createContext(unsigned platform_number)
   // Get list of all devices available on platform
   platform_list[platform_number].getDevices( CL_DEVICE_TYPE_GPU, &_device);
 
-  // Create context
+  // Create contexts for every device in selected platform
   cl_context_properties context_properties[] = {
   CL_CONTEXT_PLATFORM,
       (cl_context_properties) (platform_list[platform_number])(), 0 };
-  _context = cl::Context { CL_DEVICE_TYPE_ALL, context_properties };
+  _context = cl::Context { CL_DEVICE_TYPE_GPU, context_properties };
 
   // Create command queues
-  for (auto & device : _device)
+  for (int i = 0; i < _device.size(); i++)
   {
-    cl::CommandQueue queue { _context, device };
+    cl::CommandQueue queue { _context, _device[i] };
     _command_queue.push_back(queue);
   }
 }
@@ -107,7 +105,7 @@ Runner::~Runner()
     delete[] i;
 
   for (auto i : _flag)
-    delete[] i;
+    delete i;
 
   for (auto i : _cnt_found)
     delete[] i;
@@ -125,7 +123,7 @@ void Runner::initGenerator()
 
   // Get kernel source for generator
   ifstream source_file { _passgen->GetKernelSource(), ifstream::in };
-  if (not source_file.is_open())
+  if (!source_file.is_open())
     throw invalid_argument { "Kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
@@ -139,24 +137,27 @@ void Runner::initGenerator()
   _passwords_num_items = _passwords_entry_size * _gws;
   _passwords_size = _passwords_num_items * sizeof(cl_uchar);
 
-  _flag_size = sizeof(u_char);
-  for (int i = 0; i < num_devices; i++)
+  _flag_size = sizeof(cl_uchar);
+
+  for (unsigned i = 0; i < num_devices; i++)
   {
     cl_uchar *passwords = new cl_uchar[_passwords_num_items];
-    memset(passwords, 0, sizeof(cl_uchar) * _passwords_num_items);
+    memset(passwords, 0, _passwords_size);
     _passwords.push_back(passwords);
 
-    cl::Buffer passwords_buffer { _context,
-    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _passwords_size * _device.size(),
-        passwords };
+    cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE, _passwords_size };
+    _command_queue[i].enqueueWriteBuffer(passwords_buffer, CL_TRUE, 0,
+                                         _passwords_size, passwords);
     _passwords_buffer.push_back(passwords_buffer);
 
-    cl_uchar *flag = new u_char[_flag_size];
+    cl_uchar *flag = new cl_uchar;
     memset(flag, 0, _flag_size);
     _flag.push_back(flag);
 
     cl::Buffer flag_buffer = cl::Buffer { _context,
-    CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, _flag_size, flag };
+    CL_MEM_READ_WRITE, _flag_size };
+    _command_queue[i].enqueueWriteBuffer(flag_buffer, CL_TRUE, 0, _flag_size,
+                                         flag);
     _flag_buffer.push_back(flag_buffer);
   }
 
@@ -187,34 +188,34 @@ void Runner::initCracker()
 
   // Get kernel source for generator
   ifstream source_file { _cracker->GetKernelSource(), ifstream::in };
-  if (not source_file.is_open())
+  if (!source_file.is_open())
     throw invalid_argument { "Cracker's kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
 
   // Create and build program
   cl::Program program { _context, source, true };
-  //  passgen_program.build("-Werror -g -s \"/home/gazdik/Documents/FIT/IBP/workspace/clMarkovPassGen/bin/kernels/CLMarkovPassGen.cl\"");
   program.build("-Werror");
 
   // Create kernel's memory objects
   _cnt_found_num_items = _gws;
   _cnt_found_size = _cnt_found_num_items * sizeof(cl_uint);
 
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
-    cl_uint *cnt_found = new cl_uint[_cnt_found_size];
+    cl_uint *cnt_found = new cl_uint[_cnt_found_num_items];
     memset(cnt_found, 0, _cnt_found_size);
     _cnt_found.push_back(cnt_found);
 
-    cl::Buffer cnt_found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE
-        | CL_MEM_COPY_HOST_PTR, _cnt_found_size, cnt_found };
-
+    cl::Buffer cnt_found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE,
+        _cnt_found_size };
+    _command_queue[i].enqueueWriteBuffer(cnt_found_buffer, CL_TRUE, 0,
+                                         _cnt_found_size, cnt_found);
     _cnt_found_buffer.push_back(cnt_found_buffer);
   }
 
   // Create kernels
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     cl::Kernel kernel { program, _cracker->GetKernelName().c_str() };
 
@@ -228,7 +229,7 @@ void Runner::initCracker()
   }
 
   // Initialize generator's kernel
-  for (int i = 0; i < num_devices; i++)
+  for (unsigned i = 0; i < num_devices; i++)
   {
     _cracker->InitKernel(_cracker_kernel[i], _command_queue[i], _context);
   }
@@ -279,7 +280,7 @@ void Runner::runThread(unsigned i)
     {
       *_flag[i] = FLAG_NONE;
       _command_queue[0].enqueueWriteBuffer(_flag_buffer[i], CL_FALSE, 0,
-                                           sizeof(cl_uchar), _flag[i]);
+                                           _flag_size, _flag[i]);
     }
   }
 
@@ -293,9 +294,9 @@ void Runner::runThread(unsigned i)
 
 void Runner::printCrackedPasswords(unsigned thread_number)
 {
-  pthread_mutex_lock(&_mutex_output);
+  _mutex_output.lock();
 
-  for (int i = 0; i < _gws; i++)
+  for (unsigned i = 0; i < _gws; i++)
   {
     unsigned index = i * _passwords_entry_size;
     unsigned length = _passwords[thread_number][index];
@@ -303,23 +304,12 @@ void Runner::printCrackedPasswords(unsigned thread_number)
     if (length == 0)
       continue;
 
-    for (int j = 1; j <= length; j++)
+    for (unsigned j = 1; j <= length; j++)
     {
       cout << (char) _passwords[thread_number][index + j];
     }
     cout << "\n";
   }
 
-  pthread_mutex_unlock(&_mutex_output);
-}
-
-void* Runner::start_thread(void* arg)
-{
-  thread_args *args = static_cast<thread_args *>(arg);
-
-  args->runner->runThread(args->thread_number);
-
-  pthread_exit(NULL);
-
-  return (nullptr);
+  _mutex_output.unlock();
 }

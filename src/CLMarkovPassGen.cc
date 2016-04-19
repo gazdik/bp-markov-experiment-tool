@@ -21,9 +21,11 @@
  *
  */
 
+#define NOMINMAX
+
 #include <CLMarkovPassGen.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>     // ntohl, ntohs
@@ -44,32 +46,27 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                                  cl::Context& context, unsigned gws,
                                  cl_uint step)
 {
-  // If this is first invocation of method, create common buffer objects for
-  // all devices in context
-  if (_indexes_buffers.empty())
-  {
-    _markov_table_buffer = cl::Buffer { context, CL_MEM_READ_ONLY,
-        _markov_table_size * sizeof(cl_uchar) };
-    _thresholds_buffer = cl::Buffer { context, CL_MEM_READ_ONLY, _max_length
-        * sizeof(cl_uint) };
-    _permutations_buffer = cl::Buffer { context, CL_MEM_READ_ONLY, (_max_length
-        + 1) * sizeof(cl_ulong) };
+  cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY, _markov_table_size
+      * sizeof(cl_uchar) };
+  queue.enqueueWriteBuffer(markov_table_buffer, CL_TRUE, 0, _markov_table_size * sizeof(cl_uchar), _markov_table);
+  _markov_table_buffer.push_back(markov_table_buffer);
 
-    queue.enqueueWriteBuffer(_markov_table_buffer, CL_TRUE, 0,
-                             sizeof(cl_uchar) * _markov_table_size,
-                             _markov_table);
-    queue.enqueueWriteBuffer(_thresholds_buffer, CL_TRUE, 0,
-                             sizeof(cl_uint) * _max_length, _thresholds);
-    queue.enqueueWriteBuffer(_permutations_buffer, CL_TRUE, 0,
-                             sizeof(cl_ulong) * (_max_length + 1),
-                             _permutations);
-  }
+  cl::Buffer thresholds_buffer { context, CL_MEM_READ_ONLY, _max_length
+      * sizeof(cl_uint) };
+  queue.enqueueWriteBuffer(thresholds_buffer, CL_TRUE, 0, _max_length * sizeof(cl_uint), _thresholds);
+  _thresholds_buffer.push_back(thresholds_buffer);
+
+  cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY, (_max_length + 1)
+      * sizeof(cl_ulong) };
+  queue.enqueueWriteBuffer(permutations_buffer, CL_TRUE, 0, (_max_length + 1) * sizeof(cl_ulong), _permutations);
+  _permutations_buffer.push_back(permutations_buffer);
 
   cl::Buffer indexes_buffer { context, CL_MEM_READ_WRITE, gws * sizeof(cl_ulong) };
+  _indexes_buffer.push_back(indexes_buffer);
 
-  // Create a buffer for indexes
+  // Create indexes and copy them into buffer
   cl_ulong *indexes = new cl_ulong[gws];
-  for (int i = 0; i < gws; i++)
+  for (unsigned i = 0; i < gws; i++)
   {
     indexes[i] = _global_index;
     _global_index++;
@@ -78,15 +75,14 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   queue.enqueueWriteBuffer(indexes_buffer, CL_TRUE, 0, sizeof(cl_ulong) * gws,
                            indexes);
 
+  delete[] indexes;
+
   kernel.setArg(3, indexes_buffer);
-  kernel.setArg(4, _markov_table_buffer);
-  kernel.setArg(5, _thresholds_buffer);
-  kernel.setArg(6, _permutations_buffer);
+  kernel.setArg(4, markov_table_buffer);
+  kernel.setArg(5, thresholds_buffer);
+  kernel.setArg(6, permutations_buffer);
   kernel.setArg(7, _max_threshold);
   kernel.setArg(8, step);
-
-  _indexes_buffers.push_back(indexes_buffer);
-  delete[] indexes;
 }
 
 CLMarkovPassGen::CLMarkovPassGen(Options & options) :
@@ -141,7 +137,7 @@ int CLMarkovPassGen::compareSortElements(const void* p1, const void* p2)
   const SortElement *e1 = static_cast<const SortElement *>(p1);
   const SortElement *e2 = static_cast<const SortElement *>(p2);
 
-  if (not isValidChar(e1->next_state))
+  if (!isValidChar(e1->next_state))
     return (1);
 
   return (e2->probability - e1->probability);
@@ -282,13 +278,13 @@ void CLMarkovPassGen::initMemory()
   _markov_table = new cl_uchar[_markov_table_size];
 
   unsigned index, index1, index2;
-  for (int p = 0; p < _max_length; p++)
+  for (unsigned p = 0; p < _max_length; p++)
   {
     index1 = p * CHARSET_SIZE * _max_threshold;
-    for (int i = 0; i < CHARSET_SIZE; i++)
+    for (unsigned i = 0; i < CHARSET_SIZE; i++)
     {
       index2 = i * _max_threshold;
-      for (int j = 0; j < _max_threshold; j++)
+      for (unsigned j = 0; j < _max_threshold; j++)
       {
         index = index1 + index2 + j;
         _markov_table[index] = markov_sort_table[p][i][j].next_state;
@@ -310,7 +306,7 @@ uint64_t CLMarkovPassGen::numPermutations(const unsigned length)
 {
   uint64_t result = 1;
 
-  for (int i = 0; i < length; i++)
+  for (unsigned i = 0; i < length; i++)
   {
     result *= _thresholds[i];
   }
@@ -417,7 +413,7 @@ std::string CLMarkovPassGen::getPassword()
   char last_char = 0;
 
   // Create password
-  for (int p = 0; p < length; p++)
+  for (unsigned p = 0; p < length; p++)
   {
     partial_index = index % _thresholds[p];
     index = index / _thresholds[p];
