@@ -120,7 +120,6 @@ CLMarkovPassGen::CLMarkovPassGen(Options & options) :
   cout << "Mask: " << _mask << endl;
 
   cout << "Maximal threshold: " << _max_threshold << endl;
-  printMarkovTable();
 }
 
 CLMarkovPassGen::~CLMarkovPassGen()
