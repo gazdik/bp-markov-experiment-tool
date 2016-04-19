@@ -123,7 +123,7 @@ void Runner::initGenerator()
 
   // Get kernel source for generator
   ifstream source_file { _passgen->GetKernelSource(), ifstream::in };
-  if (not source_file.is_open())
+  if (!source_file.is_open())
     throw invalid_argument { "Kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };
@@ -188,7 +188,7 @@ void Runner::initCracker()
 
   // Get kernel source for generator
   ifstream source_file { _cracker->GetKernelSource(), ifstream::in };
-  if (not source_file.is_open())
+  if (!source_file.is_open())
     throw invalid_argument { "Cracker's kernel code missing" };
   string source { (istreambuf_iterator<char>(source_file)), istreambuf_iterator<
       char>() };

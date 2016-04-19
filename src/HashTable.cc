@@ -108,10 +108,6 @@ void HashTable::Debug()
   cout << "Total buckets: " << _hash_table.bucket_count() << endl;
 }
 
-unsigned HashTable::GetNumEntries()
-{
-}
-
 unsigned HashTable::longestBucketSize()
 {
   unsigned num_buckets = _hash_table.bucket_count();

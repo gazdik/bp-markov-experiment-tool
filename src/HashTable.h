@@ -24,7 +24,6 @@ public:
   void Insert(std::string & value);
   unsigned GetEntryLength();
   unsigned GetBucketCount();
-  unsigned GetNumEntries();
   // TODO
   unsigned Serialize(cl_uchar **hash_table, cl_uint & num_rows,
                      cl_uint & num_entries, cl_uint & entry_size,

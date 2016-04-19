@@ -11,12 +11,17 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(Threads REQUIRED)
 find_package(OpenCL REQUIRED)
 
-add_definitions( -std=c++11 )
-#add_definitions( -DNDEBUG )
+if (UNIX)
+	add_definitions( -std=c++11 )
+endif (UNIX)
 
-#SET(CMAKE_BUILD_TYPE Release)
-SET(CMAKE_BUILD_TYPE Debug)
+SET(CMAKE_BUILD_TYPE Release)
+#SET(CMAKE_BUILD_TYPE Debug)
 
+if (WIN32)  
+  include_directories(${CMAKE_SOURCE_DIR}/include/windows)  
+endif (WIN32)
+  
 include_directories(${OPENCL_INCLUDE_DIRS})
 add_subdirectory(src)
 

@@ -21,9 +21,11 @@
  *
  */
 
+#define NOMINMAX
+
 #include <CLMarkovPassGen.h>
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #else
 #include <arpa/inet.h>     // ntohl, ntohs
@@ -135,7 +137,7 @@ int CLMarkovPassGen::compareSortElements(const void* p1, const void* p2)
   const SortElement *e1 = static_cast<const SortElement *>(p1);
   const SortElement *e2 = static_cast<const SortElement *>(p2);
 
-  if (not isValidChar(e1->next_state))
+  if (!isValidChar(e1->next_state))
     return (1);
 
   return (e2->probability - e1->probability);
