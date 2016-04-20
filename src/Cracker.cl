@@ -22,24 +22,34 @@
  */
 
 #define CHARSET_SIZE 256
-
 #define FLAG_NONE 0
 #define FLAG_END 1
 #define FLAG_CRACKED 2
 #define FLAG_CRACKED_END 3
 
-uint table_row_index (__global uchar *password, uchar password_length, uint num_rows)
+/**
+ * Calc index to hash table for given string
+ * @param  str c string
+ * @param  str_length length of string
+ * @param  num_rows number of rows in hash table
+ * @return row index
+ */
+uint table_row_index (__global uchar *str, uchar str_length, uint num_rows)
 {
   uint hash = 5381;
 
-  for (int i = 0; i < password_length; i++)
+  for (int i = 0; i < str_length; i++)
   {
-    hash = ((hash << 5) + hash) + password[i];
+    hash = ((hash << 5) + hash) + str[i];
   }
 
   return hash % num_rows;
 }
 
+/**
+ * Compare two strings
+ * @return TRUE if the contents of both strings are equal, FALSE otherwise
+ */
 bool strcmp (__global const uchar *str1, uchar str1_length,
              __global const uchar *str2, uchar str2_length)
 {
@@ -65,12 +75,6 @@ __kernel void cracker (__global uchar *passwords, uint password_entry_size,
                        uint num_entries, uint entry_size, uint row_size)
 {
   size_t id = get_global_id(0);
-
-  // printf("num_rows: %u\n", num_rows);
-  // printf("num_entries: %u\n", num_entries);
-  // printf("entry_size: %u\n", entry_size);
-  // printf("row_size: %u\n", row_size);
-
   __global uchar *password = &passwords[id * password_entry_size + 1];
   uchar password_length = password[-1];
 
