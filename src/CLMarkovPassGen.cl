@@ -33,21 +33,7 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
                     __constant ulong *permutations, uint max_threshold,
                     uint step)
 {
-  // for (int i = 0; i < 2; i++)
-  // {
-  //   printf("indexes[%d] = %u\n", i, indexes[i]);
-  //   printf("markov_table[%d] = %c\n", i, markov_table[i]);
-  //   printf("thresholds[%d] = %u\n", i, thresholds[i]);
-  //   printf("permutations[%d] = %lu\n", i, permutations[i]);
-  // }
-  // printf("max_threshold = %u\n", max_threshold);
-  // printf("entry_size %u\n", entry_size);
-  // printf("step = %u\n", step);
-
-
   uint max_length = entry_size - 1;
-  // prefetch(passwords, entry_size * get_global_size(0));
-
   size_t id = get_global_id(0);
   ulong global_index = indexes[id];
   __global uchar *password = passwords + id * entry_size;
