@@ -56,9 +56,9 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   queue.enqueueWriteBuffer(thresholds_buffer, CL_TRUE, 0, _max_length * sizeof(cl_uint), _thresholds);
   _thresholds_buffer.push_back(thresholds_buffer);
 
-  cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY, (_max_length + 1)
+  cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY, (_max_length + 2)
       * sizeof(cl_ulong) };
-  queue.enqueueWriteBuffer(permutations_buffer, CL_TRUE, 0, (_max_length + 1) * sizeof(cl_ulong), _permutations);
+  queue.enqueueWriteBuffer(permutations_buffer, CL_TRUE, 0, (_max_length + 2) * sizeof(cl_ulong), _permutations);
   _permutations_buffer.push_back(permutations_buffer);
 
   cl::Buffer indexes_buffer { context, CL_MEM_READ_WRITE, gws * sizeof(cl_ulong) };
