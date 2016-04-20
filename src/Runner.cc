@@ -268,12 +268,11 @@ void Runner::runThread(unsigned i)
     _command_queue[i].enqueueReadBuffer(_flag_buffer[i], CL_TRUE, 0, _flag_size,
                                         _flag[i], &cracker_events);
 
-    if (*_flag[i] == FLAG_CRACKED || *_flag[i] == FLAG_CRACKED_END)
+    if (_verbose && (*_flag[i] == FLAG_CRACKED || *_flag[i] == FLAG_CRACKED_END))
     {
       cracked_pass = true;
       _command_queue[i].enqueueReadBuffer(_passwords_buffer[i], CL_TRUE, 0,
-                                          _passwords_size, _passwords[i],
-                                          &cracker_events);
+                                          _passwords_size, _passwords[i]);
     }
 
     if (*_flag[i] == FLAG_CRACKED)
@@ -285,8 +284,7 @@ void Runner::runThread(unsigned i)
   }
 
   _command_queue[i].enqueueReadBuffer(_cnt_found_buffer[i], CL_TRUE, 0,
-                                      _cnt_found_size, _cnt_found[i],
-                                      &cracker_events);
+                                      _cnt_found_size, _cnt_found[i]);
 
   if (_verbose && cracked_pass)
     printCrackedPasswords(i);
