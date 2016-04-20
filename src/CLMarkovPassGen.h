@@ -24,7 +24,7 @@
 #ifndef CLMARKOVPASSGEN_H_
 #define CLMARKOVPASSGEN_H_
 
-#define __CL_ENABE_EXCEPTIONS
+#define __CL_ENABLE_EXCEPTIONS
 
 #include <cstdint>
 #include <CL/cl.hpp>
