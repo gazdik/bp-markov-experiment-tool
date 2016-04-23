@@ -82,7 +82,7 @@ void Runner::createContext(unsigned platform_number)
   _context = cl::Context { CL_DEVICE_TYPE_GPU, context_properties };
 
   // Create command queues
-  for (int i = 0; i < _device.size(); i++)
+  for (unsigned i = 0; i < _device.size(); i++)
   {
     cl::CommandQueue queue { _context, _device[i] };
     _command_queue.push_back(queue);
@@ -149,7 +149,7 @@ void Runner::initGenerator()
   }
 
   // Create kernels
-  for (int i = 0; i < _device.size(); i++)
+  for (unsigned i = 0; i < _device.size(); i++)
   {
     cl::Kernel kernel { program, _passgen->GetKernelName().c_str() };
 
@@ -162,7 +162,7 @@ void Runner::initGenerator()
   }
 
   // Initialize generator's kernel
-  for (int i = 0; i < _passgen_kernel.size(); i++)
+  for (unsigned i = 0; i < _passgen_kernel.size(); i++)
   {
     _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context, _gws,
                          step);

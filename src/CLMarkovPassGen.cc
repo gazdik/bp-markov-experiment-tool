@@ -334,7 +334,7 @@ void CLMarkovPassGen::applyMask(
     SortElement* table[MAX_PASS_LENGTH][CHARSET_SIZE])
 {
   int position = 0;
-  for (int i = 0; i < _mask.length(); i++)
+  for (unsigned i = 0; i < _mask.length(); i++)
   {
     switch (_mask[i])
     {

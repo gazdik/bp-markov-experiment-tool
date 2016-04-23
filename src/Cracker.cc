@@ -120,7 +120,7 @@ void Cracker::PrintResults()
 
 
   // Update flags in hash table
-  for (int i = 0; i < _cmd_queue.size(); i++)
+  for (unsigned i = 0; i < _cmd_queue.size(); i++)
   {
     _cmd_queue[i].enqueueReadBuffer(_hash_table_buffer[i], CL_TRUE, 0,
                                     _hash_table_size, tmp_hash_table);
@@ -143,7 +143,7 @@ void Cracker::PrintResults()
   vector<string> cracked_passwords;
 
 
-  for (int i = 0; i < total_num_elements; i++)
+  for (unsigned i = 0; i < total_num_elements; i++)
   {
     index = _entry_size * i;
 

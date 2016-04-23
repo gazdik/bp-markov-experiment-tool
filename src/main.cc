@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
     vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
 
-    for (int i = 0; i < platforms.size(); i++)
+    for (unsigned i = 0; i < platforms.size(); i++)
     {
       vector<cl::Device> devices;
       cout << "[" << i << "] " << platforms[i].getInfo<CL_PLATFORM_NAME>() << endl;
