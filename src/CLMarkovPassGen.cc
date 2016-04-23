@@ -402,44 +402,6 @@ void CLMarkovPassGen::applyMetachar(SortElement** table, char character)
   }
 }
 
-std::string CLMarkovPassGen::getPassword()
-{
-  string result;
-
-  // Determine current length according to index
-  unsigned length = 1;
-  while (_global_index >= _permutations[length])
-  {
-    length++;
-
-  }
-
-  if (length > _max_length)
-    return (string { "END" });
-
-  // Convert global index to local index
-  uint64_t index = _global_index - _permutations[length - 1];
-
-  uint64_t partial_index;
-  char last_char = 0;
-
-  // Create password
-  for (unsigned p = 0; p < length; p++)
-  {
-    partial_index = index % _thresholds[p];
-    index = index / _thresholds[p];
-
-    last_char = _markov_table[p * CHARSET_SIZE * _max_threshold
-        + last_char * _max_threshold + partial_index];
-
-    result += last_char;
-  }
-
-  _global_index++;
-
-  return (result);
-}
-
 bool CLMarkovPassGen::satisfyMask(uint8_t character, char mask)
 {
   switch (mask)

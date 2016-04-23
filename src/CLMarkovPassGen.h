@@ -85,10 +85,7 @@ public:
    */
   unsigned MaxPasswordLength();
 
-  /**
-   * TODO Remove
-   */
-  std::string getPassword();
+
 
   /**
    * TODO DEBUG
