@@ -48,17 +48,17 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
 {
   cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY, _markov_table_size
       * sizeof(cl_uchar) };
-  queue.enqueueWriteBuffer(markov_table_buffer, CL_TRUE, 0, _markov_table_size * sizeof(cl_uchar), _markov_table);
+  queue.enqueueWriteBuffer(markov_table_buffer, CL_FALSE, 0, _markov_table_size * sizeof(cl_uchar), _markov_table);
   _markov_table_buffer.push_back(markov_table_buffer);
 
   cl::Buffer thresholds_buffer { context, CL_MEM_READ_ONLY, _max_length
       * sizeof(cl_uint) };
-  queue.enqueueWriteBuffer(thresholds_buffer, CL_TRUE, 0, _max_length * sizeof(cl_uint), _thresholds);
+  queue.enqueueWriteBuffer(thresholds_buffer, CL_FALSE, 0, _max_length * sizeof(cl_uint), _thresholds);
   _thresholds_buffer.push_back(thresholds_buffer);
 
   cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY, (_max_length + 2)
       * sizeof(cl_ulong) };
-  queue.enqueueWriteBuffer(permutations_buffer, CL_TRUE, 0, (_max_length + 2) * sizeof(cl_ulong), _permutations);
+  queue.enqueueWriteBuffer(permutations_buffer, CL_FALSE, 0, (_max_length + 2) * sizeof(cl_ulong), _permutations);
   _permutations_buffer.push_back(permutations_buffer);
 
   cl::Buffer indexes_buffer { context, CL_MEM_READ_WRITE, gws * sizeof(cl_ulong) };

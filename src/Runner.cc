@@ -133,7 +133,7 @@ void Runner::initGenerator()
     _passwords.push_back(passwords);
 
     cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE, _passwords_size };
-    _command_queue[i].enqueueWriteBuffer(passwords_buffer, CL_TRUE, 0,
+    _command_queue[i].enqueueWriteBuffer(passwords_buffer, CL_FALSE, 0,
                                          _passwords_size, passwords);
     _passwords_buffer.push_back(passwords_buffer);
 
@@ -143,7 +143,7 @@ void Runner::initGenerator()
 
     cl::Buffer flag_buffer = cl::Buffer { _context,
     CL_MEM_READ_WRITE, _flag_size };
-    _command_queue[i].enqueueWriteBuffer(flag_buffer, CL_TRUE, 0, _flag_size,
+    _command_queue[i].enqueueWriteBuffer(flag_buffer, CL_FALSE, 0, _flag_size,
                                          flag);
     _flag_buffer.push_back(flag_buffer);
   }

@@ -97,7 +97,7 @@ void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   _cmd_queue.push_back(queue);
 
   cl::Buffer hash_table_buffer { context, CL_MEM_READ_WRITE, _hash_table_size };
-  queue.enqueueWriteBuffer(hash_table_buffer, CL_TRUE, 0, _hash_table_size,
+  queue.enqueueWriteBuffer(hash_table_buffer, CL_FALSE, 0, _hash_table_size,
                            _flat_hash_table);
   _hash_table_buffer.push_back(hash_table_buffer);
 
