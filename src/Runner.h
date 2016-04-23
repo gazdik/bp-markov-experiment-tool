@@ -78,11 +78,6 @@ private:
   size_t _flag_size;
   std::vector<cl::Buffer> _flag_buffer;
 
-  std::vector<cl_uint *> _cnt_found;
-  unsigned _cnt_found_num_items;
-  size_t _cnt_found_size;
-  std::vector<cl::Buffer> _cnt_found_buffer;
-
   void createContext(unsigned platform_number);
   void initGenerator();
   void initCracker();

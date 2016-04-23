@@ -25,7 +25,6 @@
 
 #include <CL/cl.hpp>
 
-// TODO Debug
 #include <iostream>
 
 #include <fstream>
@@ -33,7 +32,21 @@
 
 using namespace std;
 
-Cracker::Cracker(Options options)
+std::string makeString(cl_uchar *ht_element)
+{
+  char buffer[256];
+  unsigned length = ht_element[HT_LENGTH_OFFSET];
+
+  for (unsigned i = 0; i < length; i++)
+  {
+    buffer[i] = ht_element[HT_PAYLOAD_OFFSET + i];
+  }
+
+  return (std::string { buffer, length });
+}
+
+Cracker::Cracker(Options options) :
+    _print_passwords { options.print_passwords }
 {
   ifstream dictionary { options.dictionary, ifstream::in };
 
@@ -53,7 +66,7 @@ Cracker::Cracker(Options options)
     hash_table->Insert(word);
   }
 
-  _hash_table_size = hash_table->Serialize(&_hash_table, _num_rows,
+  _hash_table_size = hash_table->Serialize(&_flat_hash_table, _num_rows,
                                            _num_entries, _entry_size,
                                            _row_size);
 
@@ -65,7 +78,7 @@ Cracker::Cracker(Options options)
 
 Cracker::~Cracker()
 {
-  delete[] _hash_table;
+  delete[] _flat_hash_table;
 }
 
 std::string Cracker::GetKernelSource()
@@ -81,14 +94,65 @@ std::string Cracker::GetKernelName()
 void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
                          cl::Context& context)
 {
-  cl::Buffer hash_table_buffer { context, CL_MEM_READ_ONLY, _hash_table_size };
+  _cmd_queue.push_back(queue);
+
+  cl::Buffer hash_table_buffer { context, CL_MEM_READ_WRITE, _hash_table_size };
   queue.enqueueWriteBuffer(hash_table_buffer, CL_TRUE, 0, _hash_table_size,
-                           _hash_table);
+                           _flat_hash_table);
   _hash_table_buffer.push_back(hash_table_buffer);
 
-  kernel.setArg(4, hash_table_buffer);
-  kernel.setArg(5, _num_rows);
-  kernel.setArg(6, _num_entries);
-  kernel.setArg(7, _entry_size);
-  kernel.setArg(8, _row_size);
+  kernel.setArg(2, hash_table_buffer);
+  kernel.setArg(3, _num_rows);
+  kernel.setArg(4, _num_entries);
+  kernel.setArg(5, _entry_size);
+  kernel.setArg(6, _row_size);
+}
+
+void Cracker::PrintResults()
+{
+  cl_uchar *tmp_hash_table = new cl_uchar[_hash_table_size];
+  unsigned total_num_elements = _num_entries * _num_rows;
+  unsigned index;
+
+
+  // Update flags in hash table
+  for (int i = 0; i < _cmd_queue.size(); i++)
+  {
+    _cmd_queue[i].enqueueReadBuffer(_hash_table_buffer[i], CL_TRUE, 0,
+                                    _hash_table_size, tmp_hash_table);
+
+    for (unsigned i = 0; i < total_num_elements; i++)
+    {
+      index = _entry_size * i + HT_FLAG_OFFSET;
+
+      if (tmp_hash_table[index] == HT_FOUND)
+      {
+        _flat_hash_table[index] = HT_FOUND;
+      }
+    }
+  }
+
+  delete[] tmp_hash_table;
+
+  // Count cracked passwords
+  unsigned num_cracked_passwords = 0;
+  vector<string> cracked_passwords;
+
+
+  for (int i = 0; i < total_num_elements; i++)
+  {
+    index = _entry_size * i;
+
+    if (_flat_hash_table[index + HT_FLAG_OFFSET] == HT_FOUND)
+    {
+      num_cracked_passwords++;
+      if (_print_passwords)
+        cracked_passwords.push_back(makeString(&_flat_hash_table[index]));
+    }
+  }
+
+  // Print results
+  cout << "Cracked passwords: " << num_cracked_passwords << "\n";
+  for (auto pass: cracked_passwords)
+    cout << pass << "\n";
 }

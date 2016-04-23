@@ -54,6 +54,7 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
     "Cracker:\n"
 		"   -d, --dictionary        dictionary with passwords to crack\n"
     "   --load-factor           maximal load factor for the hash table (default 1) \n"
+    "   -P, --print             print cracked passwords\n"
 		"Generator:\n"
 		"   -s, --statistics        file with statistics\n"
 		"   -t, --thresholds=glob[:pos]\n"
@@ -77,6 +78,7 @@ const struct option long_options[] =
 	{"thresholds", required_argument, 0, 't'},
 	{"length", required_argument, 0, 'l'},
 	{"mask", required_argument, 0, 'm'},
+	{"print", no_argument, 0, 'P'},
 	{"model", required_argument, 0, 1},
 	{"list-platforms", no_argument, 0, 2},
 	{"load-factor", required_argument, 0, 3},
@@ -90,7 +92,7 @@ int main(int argc, char *argv[])
   Options options;
   int opt, option_index;
 
-  while ((opt = getopt_long(argc, argv, "hvp:g:d:s:t:l:m:", long_options,
+  while ((opt = getopt_long(argc, argv, "hvp:g:d:s:t:l:m:P", long_options,
                             &option_index)) != -1)
   {
     switch (opt)
@@ -130,6 +132,9 @@ int main(int argc, char *argv[])
         break;
       case 'm':
         options.mask = optarg;
+        break;
+      case 'P':
+        options.print_passwords = true;
         break;
       default:
         return (2);

@@ -53,26 +53,16 @@ void Runner::Run()
 
   for (unsigned i = 0; i < num_threads; i++)
   {
-    threads.push_back(thread {&Runner::runThread, this, i});
+    threads.push_back(thread { &Runner::runThread, this, i });
   }
 
   // Wait for all threads to complete
-  for (auto &i: threads)
+  for (auto &i : threads)
   {
     i.join();
   }
 
-  unsigned num_devices = _device.size();
-  unsigned found = 0;
-
-  for (unsigned d = 0; d < num_devices; d++)
-  {
-    for (unsigned i = 0; i < _cnt_found_num_items; i++)
-    {
-      found += _cnt_found[d][i];
-    }
-  }
-  cout << "Found passwords: " << found << endl;
+  _cracker->PrintResults();
 }
 
 void Runner::createContext(unsigned platform_number)
@@ -106,9 +96,6 @@ Runner::~Runner()
 
   for (auto i : _flag)
     delete i;
-
-  for (auto i : _cnt_found)
-    delete[] i;
 
   delete _passgen;
   delete _cracker;
@@ -197,23 +184,6 @@ void Runner::initCracker()
   cl::Program program { _context, source, true };
   program.build("-Werror");
 
-  // Create kernel's memory objects
-  _cnt_found_num_items = _gws;
-  _cnt_found_size = _cnt_found_num_items * sizeof(cl_uint);
-
-  for (unsigned i = 0; i < num_devices; i++)
-  {
-    cl_uint *cnt_found = new cl_uint[_cnt_found_num_items];
-    memset(cnt_found, 0, _cnt_found_size);
-    _cnt_found.push_back(cnt_found);
-
-    cl::Buffer cnt_found_buffer = cl::Buffer { _context, CL_MEM_READ_WRITE,
-        _cnt_found_size };
-    _command_queue[i].enqueueWriteBuffer(cnt_found_buffer, CL_TRUE, 0,
-                                         _cnt_found_size, cnt_found);
-    _cnt_found_buffer.push_back(cnt_found_buffer);
-  }
-
   // Create kernels
   for (unsigned i = 0; i < num_devices; i++)
   {
@@ -222,8 +192,6 @@ void Runner::initCracker()
     // Set password buffer as first argument
     kernel.setArg(0, _passwords_buffer[i]);
     kernel.setArg(1, _passwords_entry_size);
-    kernel.setArg(2, _flag_buffer[i]);
-    kernel.setArg(3, _cnt_found_buffer[i]);
 
     _cracker_kernel.push_back(kernel);
   }
@@ -235,59 +203,38 @@ void Runner::initCracker()
   }
 }
 
-void Runner::runThread(unsigned i)
+void Runner::runThread(unsigned thr_num)
 {
   vector<cl::Event> passgen_events;
   vector<cl::Event> cracker_events;
-  bool cracked_pass = false;
+  cl::Event event;
 
-  while (*_flag[i] == FLAG_NONE)
+  while (*_flag[thr_num] == FLAG_NONE)
   {
     passgen_events.clear();
     cracker_events.clear();
 
-    cl::Event event;
-    _command_queue[i].enqueueNDRangeKernel(_passgen_kernel[i], cl::NullRange,
-                                           cl::NDRange(_gws), cl::NullRange,
-                                           nullptr, &event);
+    _command_queue[thr_num].enqueueNDRangeKernel(_passgen_kernel[thr_num],
+                                                 cl::NullRange,
+                                                 cl::NDRange(_gws),
+                                                 cl::NullRange, nullptr,
+                                                 &event);
 
     passgen_events.push_back(event);
 
-    _command_queue[i].enqueueNDRangeKernel(_cracker_kernel[i], cl::NullRange,
-                                           cl::NDRange(_gws), cl::NullRange,
-                                           &passgen_events, &event);
+    _command_queue[thr_num].enqueueNDRangeKernel(_cracker_kernel[thr_num],
+                                                 cl::NullRange,
+                                                 cl::NDRange(_gws),
+                                                 cl::NullRange, &passgen_events,
+                                                 &event);
 
     cracker_events.push_back(event);
 
-    if (_verbose && cracked_pass)
-    {
-      cracked_pass = false;
-      printCrackedPasswords(i);
-    }
+    _command_queue[thr_num].enqueueReadBuffer(_flag_buffer[thr_num], CL_TRUE, 0,
+                                              _flag_size, _flag[thr_num],
+                                              &cracker_events);
 
-    _command_queue[i].enqueueReadBuffer(_flag_buffer[i], CL_TRUE, 0, _flag_size,
-                                        _flag[i], &cracker_events);
-
-    if (_verbose && (*_flag[i] == FLAG_CRACKED || *_flag[i] == FLAG_CRACKED_END))
-    {
-      cracked_pass = true;
-      _command_queue[i].enqueueReadBuffer(_passwords_buffer[i], CL_TRUE, 0,
-                                          _passwords_size, _passwords[i]);
-    }
-
-    if (*_flag[i] == FLAG_CRACKED)
-    {
-      *_flag[i] = FLAG_NONE;
-      _command_queue[0].enqueueWriteBuffer(_flag_buffer[i], CL_FALSE, 0,
-                                           _flag_size, _flag[i]);
-    }
   }
-
-  _command_queue[i].enqueueReadBuffer(_cnt_found_buffer[i], CL_TRUE, 0,
-                                      _cnt_found_size, _cnt_found[i]);
-
-  if (_verbose && cracked_pass)
-    printCrackedPasswords(i);
 }
 
 void Runner::printCrackedPasswords(unsigned thread_number)

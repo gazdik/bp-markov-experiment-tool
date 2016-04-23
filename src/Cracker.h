@@ -39,6 +39,7 @@ public:
   {
     std::string dictionary;
     float max_load_factor = 1.0;
+    bool print_passwords = false;
   };
 
   Cracker(Options options);
@@ -49,17 +50,19 @@ public:
 
   void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
                   cl::Context & context);
+  void PrintResults();
 
 private:
   const std::string _kernel_name = "cracker";
   const std::string _kernel_source = "kernels/Cracker.cl";
 
-  // TODO change
+  std::vector<cl::CommandQueue> _cmd_queue;
   std::vector<cl::Buffer> _hash_table_buffer;
   unsigned _hash_table_size;
-  cl_uchar *_hash_table;
+  cl_uchar *_flat_hash_table;
   cl_uint _num_rows, _num_entries, _entry_size, _row_size;
 
+  bool _print_passwords;
 };
 
 #endif /* CRACKER_H_ */

@@ -17,6 +17,13 @@
 
 #include <CL/cl.hpp>
 
+#define HT_EXTRA_BYTES 2
+#define HT_LENGTH_OFFSET 0
+#define HT_FLAG_OFFSET 1
+#define HT_PAYLOAD_OFFSET 2
+#define HT_FOUND 1
+#define HT_NOTFOUND 0
+
 class HashTable
 {
 public:
@@ -26,7 +33,6 @@ public:
   void Insert(std::string & value);
   unsigned GetEntryLength();
   unsigned GetBucketCount();
-  // TODO
   unsigned Serialize(cl_uchar **hash_table, cl_uint & num_rows,
                      cl_uint & num_entries, cl_uint & entry_size,
                      cl_uint & row_size);
@@ -55,7 +61,6 @@ private:
   void printTable();
 
   std::unordered_set<std::string, hash_func> _hash_table;
-  cl_uchar *_flat_hash_table = nullptr;
 
   unsigned _max_length = 0;
 

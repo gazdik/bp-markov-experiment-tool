@@ -33,7 +33,7 @@ void HashTable::Insert(std::string & value)
 
 unsigned HashTable::GetEntryLength()
 {
-  return (_max_length + 1);
+  return (_max_length + HT_EXTRA_BYTES);
 }
 
 unsigned HashTable::GetBucketCount()
@@ -52,22 +52,23 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
 
   row_size = entry_size * num_entries;
 
-  unsigned hash_table_size = num_rows * row_size * sizeof(cl_uchar);
-  _flat_hash_table = new cl_uchar[hash_table_size];
-  *hash_table = _flat_hash_table;
+  unsigned hash_table_size = num_rows * row_size;
+
+  cl_uchar *hash_table_ptr = new cl_uchar[hash_table_size];
+  *hash_table = hash_table_ptr;
+  memset(hash_table_ptr, 0, hash_table_size * sizeof(cl_uchar));
 
   unsigned bucket_size;
   cl_uchar *row;
   cl_uchar *entry;
   for (unsigned i = 0; i < num_rows; i++)
   {
-    row = &_flat_hash_table[i * row_size];
-
+    row = &hash_table_ptr[i * row_size];
     bucket_size = _hash_table.bucket_size(i);
 
     if (bucket_size == 0)
     {
-      row[0] = 0;
+      row[HT_LENGTH_OFFSET] = 0;
       continue;
     }
 
@@ -82,19 +83,21 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
       if (length == 0)
         continue;
 
-      entry[0] = length;
+      entry[HT_LENGTH_OFFSET] = length;
 
       for (int i = 0; i < length; i++)
       {
-        entry[i + 1] = word[i];
+        entry[i + HT_PAYLOAD_OFFSET] = word[i];
       }
+
       j++;
     }
 
+    // TODO What is it?
     if (j < num_entries)
     {
       entry = &row[j * entry_size];
-      entry[0] = 0;
+      entry[HT_LENGTH_OFFSET] = 0;
     }
   }
 

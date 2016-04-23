@@ -27,6 +27,17 @@
 #define FLAG_CRACKED 2
 #define FLAG_CRACKED_END 3
 
+#define HT_EXTRA_BYTES 2
+#define HT_LENGTH_OFFSET 0
+#define HT_FLAG_OFFSET 1
+#define HT_PAYLOAD_OFFSET 2
+#define HT_FOUND 1
+#define HT_NOTFOUND 0
+
+#define PASS_EXTRA_BYTES 1
+#define PASS_PAYLOAD_OFFSET 1
+#define PASS_LENGTH_OFFSET 0
+
 /**
  * Calc index to hash table for given string
  * @param  str c string
@@ -70,44 +81,37 @@ bool strcmp (__global const uchar *str1, uchar str1_length,
 }
 
 __kernel void cracker (__global uchar *passwords, uint password_entry_size,
-                       __global uchar *flag, __global uint *num_found,
-                       __global const uchar *hash_table, uint num_rows,
+                       __global uchar *hash_table, uint num_rows,
                        uint num_entries, uint entry_size, uint row_size)
 {
   size_t id = get_global_id(0);
-  __global uchar *password = &passwords[id * password_entry_size + 1];
-  uchar password_length = password[-1];
+  __global uchar *password = &passwords[id * password_entry_size];
+  uchar password_length = password[PASS_LENGTH_OFFSET];
 
   if (password_length == 0)
   {
     return;
   }
 
-  uint row_index = table_row_index(password, password_length, num_rows);
-  __global const uchar *table_row = &hash_table[row_index * row_size];
+  uint row_index = table_row_index(&password[PASS_PAYLOAD_OFFSET],
+                                   password_length, num_rows);
+  __global uchar *table_row = &hash_table[row_index * row_size];
 
   for (int i = 0; i < num_entries; i++)
   {
-    __global const uchar *entry = &table_row[i * entry_size + 1];
-    uchar entry_length = entry[-1];
+    __global uchar *entry = &table_row[i * entry_size];
+    uchar entry_length = entry[HT_LENGTH_OFFSET];
 
     if (entry_length == 0)
     {
       break;
     }
 
-    if (strcmp(password, password_length, entry, entry_length))
+    if (strcmp(&password[PASS_PAYLOAD_OFFSET], password_length,
+               &entry[HT_PAYLOAD_OFFSET], entry_length))
     {
-      num_found[id]++;
-
-      if (flag[0] == FLAG_END)
-        flag[0] = FLAG_CRACKED_END;
-      else
-        flag[0] = FLAG_CRACKED;
-
+      entry[HT_FLAG_OFFSET] = HT_FOUND;
       return;
     }
   }
-
-  password[-1] = 0;
 }
