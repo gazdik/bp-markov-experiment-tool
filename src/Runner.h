@@ -27,7 +27,6 @@
 #define __CL_ENABLE_EXCEPTIONS
 
 #include <CL/cl.hpp>
-#include <mutex>
 
 #include <vector>
 #include <string>
@@ -85,10 +84,6 @@ private:
   void initCracker();
 
   void runThread(unsigned thread_number);
-  void printCrackedPasswords(unsigned thread_number);
-
-  std::mutex _mutex_output;
-
 };
 
 #endif /* RUNNER_H_ */

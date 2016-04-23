@@ -240,25 +240,3 @@ void Runner::runThread(unsigned thr_num)
 void Runner::Details()
 {
 }
-
-void Runner::printCrackedPasswords(unsigned thread_number)
-{
-  _mutex_output.lock();
-
-  for (unsigned i = 0; i < _gws; i++)
-  {
-    unsigned index = i * _passwords_entry_size;
-    unsigned length = _passwords[thread_number][index];
-
-    if (length == 0)
-      continue;
-
-    for (unsigned j = 1; j <= length; j++)
-    {
-      cout << (char) _passwords[thread_number][index + j];
-    }
-    cout << "\n";
-  }
-
-  _mutex_output.unlock();
-}
