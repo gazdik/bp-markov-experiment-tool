@@ -22,10 +22,12 @@
  */
 
 #define CHARSET_SIZE 256
-#define FLAG_NONE 0
+#define FLAG_RUN 0
 #define FLAG_END 1
-#define FLAG_CRACKED 2
-#define FLAG_CRACKED_END 3
+
+#define PASS_EXTRA_BYTES 1
+#define PASS_PAYLOAD_OFFSET 1
+#define PASS_LENGTH_OFFSET 0
 
 __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
                     __global uchar *flag, __global ulong *indexes,
@@ -33,7 +35,7 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
                     __constant ulong *permutations, uint max_threshold,
                     uint step)
 {
-  uint max_length = entry_size - 1;
+  uint max_length = entry_size - PASS_EXTRA_BYTES;
   size_t id = get_global_id(0);
   ulong global_index = indexes[id];
   __global uchar *password = passwords + id * entry_size;
@@ -47,8 +49,8 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
 
   if (length > max_length)
   {
-    flag[0] = FLAG_END;
-    password[0] = 0;
+    *flag = FLAG_END;
+    password[PASS_LENGTH_OFFSET] = 0;
     return;
   }
 
@@ -58,7 +60,7 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
   uchar last_char = 0;
 
   // Create password
-  password[0] = length;
+  password[PASS_LENGTH_OFFSET] = length;
   for (int p = 0; p < length; p++)
   {
     partial_index = index % thresholds[p];
@@ -67,7 +69,7 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
     last_char = markov_table[p * CHARSET_SIZE * max_threshold
                              + last_char * max_threshold + partial_index];
 
-    password[p + 1] = last_char;
+    password[p + PASS_PAYLOAD_OFFSET] = last_char;
   }
 
   indexes[id] = global_index + step;
