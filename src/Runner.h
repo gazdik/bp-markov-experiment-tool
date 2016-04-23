@@ -34,10 +34,12 @@
 #include "CLMarkovPassGen.h"
 #include "Cracker.h"
 
-#define FLAG_NONE 0
+#define PASS_EXTRA_BYTES 1
+#define PASS_PAYLOAD_OFFSET 1
+#define PASS_LENGTH_OFFSET 0
+
+#define FLAG_RUN 0
 #define FLAG_END 1
-#define FLAG_CRACKED 2
-#define FLAG_CRACKED_END 3
 
 class Runner
 {

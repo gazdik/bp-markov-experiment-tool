@@ -120,7 +120,7 @@ void Runner::initGenerator()
   program.build("-Werror");
 
   // Create kernel's memory objects
-  _passwords_entry_size = _passgen->MaxPasswordLength() + 1;
+  _passwords_entry_size = _passgen->MaxPasswordLength() + PASS_EXTRA_BYTES;
   _passwords_num_items = _passwords_entry_size * _gws;
   _passwords_size = _passwords_num_items * sizeof(cl_uchar);
 
@@ -209,7 +209,7 @@ void Runner::runThread(unsigned thr_num)
   vector<cl::Event> cracker_events;
   cl::Event event;
 
-  while (*_flag[thr_num] == FLAG_NONE)
+  while (*_flag[thr_num] == FLAG_RUN)
   {
     passgen_events.clear();
     cracker_events.clear();
