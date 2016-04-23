@@ -104,11 +104,12 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
   return hash_table_size;
 }
 
-void HashTable::Debug()
+void HashTable::Details()
 {
-  cout << "Load factor: " << _hash_table.load_factor() << endl;
-  cout << "Longest bucket size: " << longestBucketSize() << endl;
-  cout << "Total buckets: " << _hash_table.bucket_count() << endl;
+  cout << "Load factor: " << _hash_table.load_factor() << "\n";
+  cout << "Longest bucket size: " << longestBucketSize() << "\n";
+  cout << "Total buckets: " << _hash_table.bucket_count() << "\n";
+  cout << "Maximal length of word in dictionary: " << _max_length << "\n";
 }
 
 unsigned HashTable::longestBucketSize()

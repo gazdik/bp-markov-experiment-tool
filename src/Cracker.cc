@@ -70,7 +70,7 @@ Cracker::Cracker(Options options) :
                                            _num_entries, _entry_size,
                                            _row_size);
 
-  hash_table->Debug();
+  hash_table->Details();
 
   delete hash_table;
 
@@ -106,6 +106,10 @@ void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   kernel.setArg(4, _num_entries);
   kernel.setArg(5, _entry_size);
   kernel.setArg(6, _row_size);
+}
+
+void Cracker::Details()
+{
 }
 
 void Cracker::PrintResults()

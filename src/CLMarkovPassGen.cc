@@ -98,28 +98,7 @@ CLMarkovPassGen::CLMarkovPassGen(Options & options) :
 
   _global_index = _permutations[_min_length - 1];
 
-  cout << "Minimal length: " << _min_length << endl;
-  cout << "Maximal length: " << _max_length << endl;
-
-  cout << "Thresholds: ";
-  for (int i = 0; i < MAX_PASS_LENGTH; i++)
-  {
-    cout << _thresholds[i] << " ";
-  }
-  cout << endl;
-
-  cout << "Model: ";
-  if (_model == Model::CLASSIC)
-    cout << "classic";
-  else if (_model == Model::LAYERED)
-    cout << "layered";
-  else
-    cout << "invalid";
-  cout << endl;
-
-  cout << "Mask: " << _mask << endl;
-
-  cout << "Maximal threshold: " << _max_threshold << endl;
+  Details();
 }
 
 CLMarkovPassGen::~CLMarkovPassGen()
@@ -400,6 +379,29 @@ void CLMarkovPassGen::applyMetachar(SortElement** table, char character)
         table[i][j].probability += UINT16_MAX + 1;
     }
   }
+}
+
+void CLMarkovPassGen::Details()
+{
+  cout << "Minimal length: " << _min_length << "\n";
+  cout << "Maximal length: " << _max_length << "\n";
+
+  cout << "Thresholds: ";
+  for (int i = 0; i < MAX_PASS_LENGTH; i++)
+  {
+    cout << _thresholds[i] << " ";
+  }
+  cout << "\n";
+  cout << "Maximal threshold: " << _max_threshold << "\n";
+
+  cout << "Model: ";
+  if (_model == Model::CLASSIC)
+    cout << "classic";
+  else if (_model == Model::LAYERED)
+    cout << "layered";
+  cout << "\n";
+
+  cout << "Mask: " << _mask << "\n";
 }
 
 bool CLMarkovPassGen::satisfyMask(uint8_t character, char mask)

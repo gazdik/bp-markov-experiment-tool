@@ -85,7 +85,10 @@ public:
    */
   unsigned MaxPasswordLength();
 
-
+  /**
+   * Print detailed informations
+   */
+  void Details();
 
   /**
    * TODO DEBUG

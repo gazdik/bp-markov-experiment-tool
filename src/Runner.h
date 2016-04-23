@@ -55,6 +55,8 @@ public:
 
   void Run();
 
+  void Details();
+
 private:
   CLMarkovPassGen * _passgen;
   Cracker * _cracker;

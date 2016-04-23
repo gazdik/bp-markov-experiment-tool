@@ -237,6 +237,10 @@ void Runner::runThread(unsigned thr_num)
   }
 }
 
+void Runner::Details()
+{
+}
+
 void Runner::printCrackedPasswords(unsigned thread_number)
 {
   _mutex_output.lock();

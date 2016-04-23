@@ -50,6 +50,8 @@ public:
 
   void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
                   cl::Context & context);
+
+  void Details();
   void PrintResults();
 
 private:

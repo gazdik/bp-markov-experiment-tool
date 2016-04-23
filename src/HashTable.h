@@ -37,8 +37,7 @@ public:
                      cl_uint & num_entries, cl_uint & entry_size,
                      cl_uint & row_size);
 
-  // TODO Debug
-  void Debug();
+  void Details();
 
 
 private:
