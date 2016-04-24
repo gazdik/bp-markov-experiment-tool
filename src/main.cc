@@ -49,12 +49,14 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
 		"   -v, --verbose           verbose mode\n"
     "   --list-platforms        print all available OpenCL platforms\n"
     "Common:\n"
-    "   -p, --platform          platform number (default 0)\n"
+    "   -D, --devices=platform[:device[,device]]\n"
+    "         - platform - platform number (default 0),\n"
+    "         - device - device number (default all available devices)\n"
     "   -g, --gws               global work size (default 1024)\n"
     "Cracker:\n"
 		"   -d, --dictionary        dictionary with passwords to crack\n"
     "   --load-factor           maximal load factor for the hash table (default 1) \n"
-    "   -P, --print             print cracked passwords\n"
+    "   -p, --print             print cracked passwords\n"
 		"Generator:\n"
 		"   -s, --statistics        file with statistics\n"
 		"   -t, --thresholds=glob[:pos]\n"
@@ -63,7 +65,7 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
     "         - pos - positional comma-separated values(overwrites global value)\n"
 		"   -l, --length=min:max    length of password (default 1:64)\n"
 		"   -m, --mask              mask\n"
-    "   --model                 type of Markov model:\n"
+    "   -M, --model                 type of Markov model:\n"
     "         - classic - First-order Markov model (default)\n"
     "         - layered - Layered Markov model\n";
 
@@ -72,13 +74,13 @@ const struct option long_options[] =
 	{"help", no_argument, 0, 'h'},
 	{"verbose", no_argument, 0, 'v'},
 	{"dictionary", required_argument, 0, 'd'},
-	{"platform", required_argument, 0, 'p'},
+	{"devices", required_argument, 0, 'D'},
 	{"gws", required_argument, 0, 'g'},
 	{"statistics", required_argument, 0, 's'},
 	{"thresholds", required_argument, 0, 't'},
 	{"length", required_argument, 0, 'l'},
 	{"mask", required_argument, 0, 'm'},
-	{"print", no_argument, 0, 'P'},
+	{"print", no_argument, 0, 'p'},
 	{"model", required_argument, 0, 1},
 	{"list-platforms", no_argument, 0, 2},
 	{"load-factor", required_argument, 0, 3},
@@ -92,7 +94,7 @@ int main(int argc, char *argv[])
   Options options;
   int opt, option_index;
 
-  while ((opt = getopt_long(argc, argv, "hvp:g:d:s:t:l:m:P", long_options,
+  while ((opt = getopt_long(argc, argv, "hvg:d:s:t:l:m:pD:", long_options,
                             &option_index)) != -1)
   {
     switch (opt)
@@ -112,9 +114,6 @@ int main(int argc, char *argv[])
       case 'v':
         options.verbose = true;
         break;
-      case 'p':
-        options.platform = atoi(optarg);
-        break;
       case 'g':
         options.gws = atoi(optarg);
         break;
@@ -133,8 +132,11 @@ int main(int argc, char *argv[])
       case 'm':
         options.mask = optarg;
         break;
-      case 'P':
+      case 'p':
         options.print_passwords = true;
+        break;
+      case 'D':
+        options.devices = optarg;
         break;
       default:
         return (2);
@@ -160,8 +162,8 @@ int main(int argc, char *argv[])
       cout << "[" << i << "] " << platforms[i].getInfo<CL_PLATFORM_NAME>() << endl;
 
       platforms[i].getDevices(CL_DEVICE_TYPE_ALL, &devices);
-      for (auto d : devices)
-        cout << "  " <<  d.getInfo<CL_DEVICE_NAME>() << endl;
+      for (unsigned i = 0; i < devices.size(); i++)
+        cout << "  [" << i << "] " <<  devices[i].getInfo<CL_DEVICE_NAME>() << endl;
     }
     return(1);
   }

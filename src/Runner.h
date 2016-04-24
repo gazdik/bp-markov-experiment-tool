@@ -47,7 +47,7 @@ public:
   struct Options : public CLMarkovPassGen::Options, Cracker::Options
   {
     unsigned gws = 1024;
-    unsigned platform = 0;
+    std::string devices = "0";
     bool verbose = false;
   };
 
@@ -64,6 +64,8 @@ private:
 
   unsigned _gws;
   bool _verbose;
+  unsigned _selected_platform;
+  std::vector<unsigned> _selected_device;
 
   cl::Context _context;
   std::vector<cl::CommandQueue> _command_queue;
@@ -81,11 +83,13 @@ private:
   size_t _flag_size;
   std::vector<cl::Buffer> _flag_buffer;
 
-  void createContext(unsigned platform_number);
+  void createContext();
   void initGenerator();
   void initCracker();
 
   void runThread(unsigned thread_number);
+
+  void parseOptions(Options & options);
 };
 
 #endif /* RUNNER_H_ */

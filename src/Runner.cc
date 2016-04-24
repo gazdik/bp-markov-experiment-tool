@@ -29,6 +29,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 
 #include "Runner.h"
 
@@ -37,10 +38,12 @@ using namespace std;
 Runner::Runner(Options & options) :
     _gws { options.gws }, _verbose { options.verbose }
 {
+  parseOptions(options);
+
   _passgen = new CLMarkovPassGen { options };
   _cracker = new Cracker { options };
 
-  createContext(options.platform);
+  createContext();
   initGenerator();
   initCracker();
 }
@@ -65,21 +68,33 @@ void Runner::Run()
   _cracker->PrintResults();
 }
 
-void Runner::createContext(unsigned platform_number)
+void Runner::createContext()
 {
   std::vector<cl::Platform> platform_list;
 
   // Get list of all available platforms
   cl::Platform::get(&platform_list);
 
+  vector<cl::Device> available_devices;
+
   // Get list of all devices available on platform
-  platform_list[platform_number].getDevices( CL_DEVICE_TYPE_GPU, &_device);
+  platform_list[_selected_platform].getDevices( CL_DEVICE_TYPE_ALL, &available_devices);
+
+  if (_selected_device.empty())
+  {
+    _device = available_devices;
+  }
+  else
+  {
+    for (auto i: _selected_device)
+      _device.push_back(available_devices[i]);
+  }
 
   // Create contexts for every device in selected platform
   cl_context_properties context_properties[] = {
   CL_CONTEXT_PLATFORM,
-      (cl_context_properties) (platform_list[platform_number])(), 0 };
-  _context = cl::Context { CL_DEVICE_TYPE_GPU, context_properties };
+      (cl_context_properties) (platform_list[_selected_platform])(), 0 };
+  _context = cl::Context { _device, context_properties };
 
   // Create command queues
   for (unsigned i = 0; i < _device.size(); i++)
@@ -239,4 +254,20 @@ void Runner::runThread(unsigned thr_num)
 
 void Runner::Details()
 {
+}
+
+void Runner::parseOptions(Options& options)
+{
+  stringstream ss;
+  string substr;
+
+  ss << options.devices;
+
+  std::getline(ss, substr, ':');
+  _selected_platform = stoi(substr);
+
+  while (std::getline(ss, substr, ','))
+  {
+    _selected_device.push_back(stoi(substr));
+  }
 }
