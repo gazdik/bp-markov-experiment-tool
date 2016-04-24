@@ -21,6 +21,8 @@
  *
  */
 
+#pragma OPENCL EXTENSION cl_amd_printf : enable
+
 #define CHARSET_SIZE 256
 #define FLAG_RUN 0
 #define FLAG_END 1
