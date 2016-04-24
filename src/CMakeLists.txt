@@ -5,10 +5,9 @@ file( GLOB ALL_SOURCES *.cc )
 add_executable (clMarkovGen ${ALL_SOURCES})
 
 if(WIN32)
-  target_link_libraries(clMarkovGen ws2_32 ${OPENCL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(clMarkovGen ws2_32 ${OpenCL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 else(WIN32)
-  target_link_libraries(clMarkovGen OpenCL ${OPENCL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
+  target_link_libraries(clMarkovGen ${OpenCL_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 endif(WIN32)
 
-#target_link_libraries( clMarkovGen ${OPENCL_LIBRARIES} )
-
+#target_link_libraries( clMarkovGen ${OpenCL_LIBRARIES} )
