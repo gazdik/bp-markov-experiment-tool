@@ -36,9 +36,8 @@
 #include <string>
 #include <fstream>
 
-const unsigned MIN_PASS_LENGTH = 1;
-const unsigned MAX_PASS_LENGTH = 64;
-const unsigned CHARSET_SIZE = 256;
+#include "Constants.h"
+
 const unsigned ETX = 3;
 
 class CLMarkovPassGen
