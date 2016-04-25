@@ -151,12 +151,23 @@ void CLMarkovPassGen::parseOptions(Options & options)
   ss.clear();
   ss << options.thresholds;
 
+  // Set global threshold
   std::getline(ss, substr, ':');
   for (int i = 0; i < MAX_PASS_LENGTH; i++)
   {
     _thresholds[i] = stoi(substr);
   }
 
+  // Adjust threshold values according to mask
+  for (int i = 0; i < MAX_PASS_LENGTH; i++)
+  {
+    unsigned mask_chars_count = _mask[i].Count();
+
+    if (mask_chars_count < _thresholds[i])
+      _thresholds[i] = mask_chars_count;
+  }
+
+  // Set positional thresholds
   int i = 0;
   while (std::getline(ss, substr, ','))
   {
@@ -330,53 +341,17 @@ unsigned CLMarkovPassGen::findStatistics(std::ifstream& stat_file)
       "File doesn't contain statistics for specified Markov model" };
 }
 
-void CLMarkovPassGen::applyMask(
-    SortElement* table[MAX_PASS_LENGTH][CHARSET_SIZE])
+void CLMarkovPassGen::applyMask(SortElement* table[MAX_PASS_LENGTH][CHARSET_SIZE])
 {
-  int position = 0;
-  for (unsigned i = 0; i < _mask.length(); i++)
+  for (unsigned p = 0; p < _max_length; p++)
   {
-    switch (_mask[i])
+    for (unsigned i = 0; i < CHARSET_SIZE; i++)
     {
-      case '?':
-        i++;
-
-        if (_mask[i] == '?')
-          applyChar(table[position], _mask[i]);
-        else
-          applyMetachar(table[position], _mask[i]);
-
-        position++;
-        break;
-      default:
-        applyChar(table[position], _mask[i]);
-
-        position++;
-        break;
-    }
-  }
-}
-
-void CLMarkovPassGen::applyChar(SortElement** table, char metachar)
-{
-  for (int i = 0; i < CHARSET_SIZE; i++)
-  {
-    for (int j = 0; j < CHARSET_SIZE; j++)
-    {
-      if (satisfyMask(table[i][j].next_state, metachar))
-        table[i][j].probability += UINT16_MAX + 1;
-    }
-  }
-}
-
-void CLMarkovPassGen::applyMetachar(SortElement** table, char character)
-{
-  for (int i = 0; i < CHARSET_SIZE; i++)
-  {
-    for (int j = 0; j < CHARSET_SIZE; j++)
-    {
-      if (table[i][j].next_state == character)
-        table[i][j].probability += UINT16_MAX + 1;
+      for (unsigned j = 0; j < CHARSET_SIZE; j++)
+      {
+        if (_mask[p].Satisfy(table[p][i][j].next_state))
+          table[p][i][j].probability += UINT16_MAX + 1;
+      }
     }
   }
 }
@@ -400,48 +375,6 @@ void CLMarkovPassGen::Details()
   else if (_model == Model::LAYERED)
     cout << "layered";
   cout << "\n";
-
-  cout << "Mask: " << _mask << "\n";
-}
-
-bool CLMarkovPassGen::satisfyMask(uint8_t character, char mask)
-{
-  switch (mask)
-  {
-    case 'u':
-      return ((character >= 65 && character <= 90) ? true : false);
-      break;
-    case 'l':
-      return ((character >= 97 && character <= 122) ? true : false);
-      break;
-    case 'c':
-      return (
-          (character >= 65 && character <= 90)
-              || (character >= 97 && character <= 122) ? true : false);
-      break;
-    case 'd':
-      return ((character >= 48 && character <= 57) ? true : false);
-      break;
-    case 's':
-      return (
-          (character >= 32 && character <= 47)
-              || (character >= 58 && character <= 64)
-              || (character >= 91 && character <= 96)
-              || (character >= 123 && character <= 126) ? true : false);
-      break;
-    case 'a':
-      return (
-          (character >= 65 && character <= 90)
-              || (character >= 97 && character <= 122)
-              || (character >= 48 && character <= 57) ? true : false);
-      break;
-    case 'x':
-      return ((character >= 32 && character <= 126) ? true : false);
-      break;
-    default:
-      return (false);
-      break;
-  }
 }
 
 std::string CLMarkovPassGen::GetKernelSource()
@@ -461,7 +394,7 @@ void CLMarkovPassGen::printMarkovTable()
     cout << "===============  P=" << p <<  " ================" << endl;
     for (unsigned i = 32; i < 127; i++)
     {
-      for (unsigned j = 0; j < _max_threshold; j++)
+      for (unsigned j = 0; j < _thresholds[p]; j++)
       {
         char c;
         c = _markov_table[p * CHARSET_SIZE * _max_threshold + i * _max_threshold

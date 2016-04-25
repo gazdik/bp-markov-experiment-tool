@@ -37,6 +37,7 @@
 #include <fstream>
 
 #include "Constants.h"
+#include "Mask.h"
 
 const unsigned ETX = 3;
 
@@ -111,7 +112,7 @@ private:
   const std::string _kernel_source = "kernels/CLMarkovPassGen.cl";
 
   std::string _stat_file;
-  std::string _mask;
+  Mask _mask;
 
   Model _model;
 
@@ -157,9 +158,6 @@ private:
   uint64_t numPermutations(unsigned length);
   unsigned findStatistics(std::ifstream & stat_file);
   void applyMask(SortElement *table[MAX_PASS_LENGTH][CHARSET_SIZE]);
-  void applyChar(SortElement **table, char metachar);
-  void applyMetachar(SortElement **table, char character);
-  bool satisfyMask(uint8_t character, char mask);
 
   // TODO
   uint64_t _global_index;
