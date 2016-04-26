@@ -47,16 +47,16 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
 		"Informations:\n"
 		"   -h, --help              prints this help\n"
 		"   -v, --verbose           verbose mode\n"
-    "   --list-platforms        print all available OpenCL platforms\n"
+    "   --list-platforms        prints all available OpenCL platforms\n"
     "Common:\n"
     "   -D, --devices=platform[:device[,device]]\n"
     "         - platform - platform number (default 0),\n"
     "         - device - device number (default all available devices)\n"
     "   -g, --gws               global work size (default 1024)\n"
     "Cracker:\n"
-		"   -d, --dictionary        dictionary with passwords to crack\n"
+		"   -d, --dictionary        dictionary with passwords to 'crack'\n"
     "   --load-factor           maximal load factor for the hash table (default 1) \n"
-    "   -p, --print             print cracked passwords\n"
+    "   -p, --print             prints cracked passwords\n"
 		"Generator:\n"
 		"   -s, --statistics        file with statistics\n"
 		"   -t, --thresholds=glob[:pos]\n"
@@ -65,7 +65,7 @@ const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
     "         - pos - positional comma-separated values(overwrites global value)\n"
 		"   -l, --length=min:max    length of password (default 1:64)\n"
 		"   -m, --mask              mask\n"
-    "   -M, --model                 type of Markov model:\n"
+    "   -M, --model             type of Markov model:\n"
     "         - classic - First-order Markov model (default)\n"
     "         - layered - Layered Markov model\n";
 
@@ -81,7 +81,7 @@ const struct option long_options[] =
 	{"length", required_argument, 0, 'l'},
 	{"mask", required_argument, 0, 'm'},
 	{"print", no_argument, 0, 'p'},
-	{"model", required_argument, 0, 1},
+	{"model", required_argument, 0, 'M'},
 	{"list-platforms", no_argument, 0, 2},
 	{"load-factor", required_argument, 0, 3},
 	{0,0,0,0}
@@ -94,12 +94,12 @@ int main(int argc, char *argv[])
   Options options;
   int opt, option_index;
 
-  while ((opt = getopt_long(argc, argv, "hvg:d:s:t:l:m:pD:", long_options,
+  while ((opt = getopt_long(argc, argv, "hvg:d:s:t:l:m:pD:M:", long_options,
                             &option_index)) != -1)
   {
     switch (opt)
     {
-      case 1:
+      case 'M':
         options.model = optarg;
         break;
       case 2:
