@@ -82,7 +82,7 @@ void Runner::createContext()
 
   if (_selected_device.empty())
   {
-    _device = available_devices;
+    platform_list[_selected_platform].getDevices(CL_DEVICE_TYPE_GPU, &_device);
   }
   else
   {
