@@ -106,10 +106,12 @@ unsigned HashTable::Serialize(cl_uchar** hash_table, cl_uint& num_rows,
 
 void HashTable::Details()
 {
+#ifndef NDEBUG
   cout << "Load factor: " << _hash_table.load_factor() << "\n";
   cout << "Longest bucket size: " << longestBucketSize() << "\n";
   cout << "Total buckets: " << _hash_table.bucket_count() << "\n";
   cout << "Maximal length of word in dictionary: " << _max_length << "\n";
+#endif
 }
 
 unsigned HashTable::longestBucketSize()

@@ -358,15 +358,19 @@ void CLMarkovPassGen::applyMask(SortElement* table[MAX_PASS_LENGTH][CHARSET_SIZE
 
 void CLMarkovPassGen::Details()
 {
+#ifndef NDEBUG
   cout << "Minimal length: " << _min_length << "\n";
   cout << "Maximal length: " << _max_length << "\n";
+#endif
 
   cout << "Thresholds: ";
-  for (int i = 0; i < MAX_PASS_LENGTH; i++)
+  for (int i = 0; i < _max_length; i++)
   {
     cout << _thresholds[i] << " ";
   }
   cout << "\n";
+
+#ifndef NDEBUG
   cout << "Maximal threshold: " << _max_threshold << "\n";
 
   cout << "Model: ";
@@ -375,6 +379,7 @@ void CLMarkovPassGen::Details()
   else if (_model == Model::LAYERED)
     cout << "layered";
   cout << "\n";
+#endif
 }
 
 std::string CLMarkovPassGen::GetKernelSource()
