@@ -109,17 +109,13 @@ Runner::~Runner()
   for (auto i : _passwords)
     delete[] i;
 
-  for (auto i : _flag)
-    delete i;
-
   delete _passgen;
   delete _cracker;
 }
 
 void Runner::initGenerator()
 {
-  // Calculate step for generator
-  cl_uint step = _gws * _device.size();
+  _passgen->SetGWS(_gws);
 
   unsigned num_devices = _device.size();
 
@@ -139,8 +135,6 @@ void Runner::initGenerator()
   _passwords_num_items = _passwords_entry_size * _gws;
   _passwords_size = _passwords_num_items * sizeof(cl_uchar);
 
-  _flag_size = sizeof(cl_uchar);
-
   for (unsigned i = 0; i < num_devices; i++)
   {
     cl_uchar *passwords = new cl_uchar[_passwords_num_items];
@@ -151,16 +145,6 @@ void Runner::initGenerator()
     _command_queue[i].enqueueWriteBuffer(passwords_buffer, CL_FALSE, 0,
                                          _passwords_size, passwords);
     _passwords_buffer.push_back(passwords_buffer);
-
-    cl_uchar *flag = new cl_uchar;
-    memset(flag, 0, _flag_size);
-    _flag.push_back(flag);
-
-    cl::Buffer flag_buffer = cl::Buffer { _context,
-    CL_MEM_READ_WRITE, _flag_size };
-    _command_queue[i].enqueueWriteBuffer(flag_buffer, CL_FALSE, 0, _flag_size,
-                                         flag);
-    _flag_buffer.push_back(flag_buffer);
   }
 
   // Create kernels
@@ -171,7 +155,6 @@ void Runner::initGenerator()
     // Set password buffer as first argument
     kernel.setArg(0, _passwords_buffer[i]);
     kernel.setArg(1, _passwords_entry_size);
-    kernel.setArg(2, _flag_buffer[i]);
 
     _passgen_kernel.push_back(kernel);
   }
@@ -179,8 +162,7 @@ void Runner::initGenerator()
   // Initialize generator's kernel
   for (unsigned i = 0; i < _passgen_kernel.size(); i++)
   {
-    _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context, _gws,
-                         step);
+    _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context, i);
   }
 }
 
@@ -218,37 +200,33 @@ void Runner::initCracker()
   }
 }
 
-void Runner::runThread(unsigned thr_num)
+void Runner::runThread(unsigned device_num)
 {
   vector<cl::Event> passgen_events;
   vector<cl::Event> cracker_events;
   cl::Event event;
 
-  while (*_flag[thr_num] == FLAG_RUN)
+  bool flag = true;
+
+  while (flag)
   {
     passgen_events.clear();
-    cracker_events.clear();
-
-    _command_queue[thr_num].enqueueNDRangeKernel(_passgen_kernel[thr_num],
+    _command_queue[device_num].enqueueNDRangeKernel(_passgen_kernel[device_num],
                                                  cl::NullRange,
                                                  cl::NDRange(_gws),
-                                                 cl::NullRange, nullptr,
+                                                 cl::NullRange, &cracker_events,
                                                  &event);
-
     passgen_events.push_back(event);
 
-    _command_queue[thr_num].enqueueNDRangeKernel(_cracker_kernel[thr_num],
+    cracker_events.clear();
+    _command_queue[device_num].enqueueNDRangeKernel(_cracker_kernel[device_num],
                                                  cl::NullRange,
                                                  cl::NDRange(_gws),
                                                  cl::NullRange, &passgen_events,
                                                  &event);
-
     cracker_events.push_back(event);
 
-    _command_queue[thr_num].enqueueReadBuffer(_flag_buffer[thr_num], CL_TRUE, 0,
-                                              _flag_size, _flag[thr_num],
-                                              &cracker_events);
-
+    flag = _passgen->NextKernelStep(device_num);
   }
 }
 

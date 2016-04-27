@@ -35,6 +35,7 @@
 
 #include <string>
 #include <fstream>
+#include <mutex>
 
 #include "Constants.h"
 #include "Mask.h"
@@ -71,6 +72,11 @@ public:
   std::string GetKernelName();
 
   /**
+   * Set Global Work Size
+   */
+  void SetGWS(std::size_t gws);
+
+  /**
    * Create buffers and set arguments
    * @param kernel
    * @param command_queue
@@ -78,7 +84,13 @@ public:
    * @param step
    */
   void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
-                  cl::Context & context, unsigned gws, cl_uint step);
+                  cl::Context & context, unsigned device_number);
+
+  /**
+   * Set up parameters for next kernel step
+   * @return FALSE if there is nothing to generate
+   */
+  bool NextKernelStep(unsigned device_number);
 
   /**
    * Return maximum length of password
@@ -145,7 +157,18 @@ private:
    */
   cl_uint _max_threshold;
 
-  std::vector<cl::Buffer> _indexes_buffer;
+  // TODO
+  cl_ulong _global_start_index;
+  cl_ulong _global_stop_index;
+  std::vector<cl_ulong> _local_start_indexes;
+  std::vector<cl_ulong> _local_stop_indexes;
+  std::size_t _gws;
+  uint64_t _resevation_size;
+
+  std::mutex _global_index_mutex;
+
+  std::vector<cl::Kernel> _kernels;
+
   std::vector<cl::Buffer> _markov_table_buffer;
   std::vector<cl::Buffer> _thresholds_buffer;
   std::vector<cl::Buffer> _permutations_buffer;
@@ -158,9 +181,7 @@ private:
   uint64_t numPermutations(unsigned length);
   unsigned findStatistics(std::ifstream & stat_file);
   void applyMask(SortElement *table[MAX_PASS_LENGTH][CHARSET_SIZE]);
-
-  // TODO
-  uint64_t _global_index;
+  bool reservePasswords(unsigned thread_number);
 };
 
 #endif /* CLMARKOVPASSGEN_H_ */

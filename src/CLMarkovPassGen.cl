@@ -21,8 +21,6 @@
  *
  */
 
-#pragma OPENCL EXTENSION cl_amd_printf : enable
-
 #define CHARSET_SIZE 256
 #define FLAG_RUN 0
 #define FLAG_END 1
@@ -32,31 +30,30 @@
 #define PASS_LENGTH_OFFSET 0
 
 __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
-                    __global uchar *flag, __global ulong *indexes,
                     __global uchar *markov_table, __constant uint *thresholds,
                     __constant ulong *permutations, uint max_threshold,
-                    uint step)
+                    ulong index_start, ulong index_stop)
 {
   uint max_length = entry_size - PASS_EXTRA_BYTES;
   size_t id = get_global_id(0);
-  ulong global_index = indexes[id];
+  ulong global_index = index_start + id;
   __global uchar *password = passwords + id * entry_size;
 
-  // Determine current length according to index
+  if (global_index > index_stop)
+  {
+    password[PASS_LENGTH_OFFSET] = 0;
+    return;
+  }
+
+
+  // Determine current length
   uint length = 1;
   while (global_index >= permutations[length])
   {
     length++;
   }
 
-  if (length > max_length)
-  {
-    *flag = FLAG_END;
-    password[PASS_LENGTH_OFFSET] = 0;
-    return;
-  }
-
-  // Convert global index to local index
+  // Convert global index into local index
   ulong index = global_index - permutations[length - 1];
   ulong partial_index;
   uchar last_char = 0;
@@ -73,6 +70,4 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
 
     password[p + PASS_PAYLOAD_OFFSET] = last_char;
   }
-
-  indexes[id] = global_index + step;
 }

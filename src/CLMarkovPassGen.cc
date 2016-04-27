@@ -43,9 +43,14 @@
 using namespace std;
 
 void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
-                                 cl::Context& context, unsigned gws,
-                                 cl_uint step)
+                                 cl::Context& context, unsigned device_number)
 {
+  _kernels.push_back(kernel);
+
+  _local_start_indexes.push_back(0);
+  _local_stop_indexes.push_back(0);
+  reservePasswords(device_number);
+
   cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY, _markov_table_size
       * sizeof(cl_uchar) };
   queue.enqueueWriteBuffer(markov_table_buffer, CL_FALSE, 0, _markov_table_size * sizeof(cl_uchar), _markov_table);
@@ -61,28 +66,12 @@ void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
   queue.enqueueWriteBuffer(permutations_buffer, CL_FALSE, 0, (_max_length + 2) * sizeof(cl_ulong), _permutations);
   _permutations_buffer.push_back(permutations_buffer);
 
-  cl::Buffer indexes_buffer { context, CL_MEM_READ_WRITE, gws * sizeof(cl_ulong) };
-  _indexes_buffer.push_back(indexes_buffer);
-
-  // Create indexes and copy them into buffer
-  cl_ulong *indexes = new cl_ulong[gws];
-  for (unsigned i = 0; i < gws; i++)
-  {
-    indexes[i] = _global_index;
-    _global_index++;
-  }
-
-  queue.enqueueWriteBuffer(indexes_buffer, CL_TRUE, 0, sizeof(cl_ulong) * gws,
-                           indexes);
-
-  delete[] indexes;
-
-  kernel.setArg(3, indexes_buffer);
-  kernel.setArg(4, markov_table_buffer);
-  kernel.setArg(5, thresholds_buffer);
-  kernel.setArg(6, permutations_buffer);
-  kernel.setArg(7, _max_threshold);
-  kernel.setArg(8, step);
+  kernel.setArg(2, markov_table_buffer);
+  kernel.setArg(3, thresholds_buffer);
+  kernel.setArg(4, permutations_buffer);
+  kernel.setArg(5, _max_threshold);
+  kernel.setArg(6, _local_start_indexes[device_number]);
+  kernel.setArg(7, _local_stop_indexes[device_number]);
 }
 
 CLMarkovPassGen::CLMarkovPassGen(Options & options) :
@@ -96,7 +85,8 @@ CLMarkovPassGen::CLMarkovPassGen(Options & options) :
   // Initialize memory
   initMemory();
 
-  _global_index = _permutations[_min_length - 1];
+  _global_start_index = _permutations[_min_length - 1];
+  _global_stop_index = _permutations[_max_length];
 
   Details();
 }
@@ -189,7 +179,7 @@ void CLMarkovPassGen::initMemory()
 {
   // Calculate permutations for all lengths
   _permutations[0] = 0;
-  for (int i = 1; i < MAX_PASS_LENGTH; i++)
+  for (int i = 1; i < MAX_PASS_LENGTH + 1; i++)
   {
     _permutations[i] = _permutations[i - 1] + numPermutations(i);
   }
@@ -410,4 +400,49 @@ void CLMarkovPassGen::printMarkovTable()
       cout << endl;
     }
   }
+}
+
+void CLMarkovPassGen::SetGWS(std::size_t gws)
+{
+  _gws = gws;
+  _resevation_size = 100 * _gws;
+}
+
+bool CLMarkovPassGen::NextKernelStep(unsigned device_number)
+{
+  if (_local_start_indexes[device_number] < _local_stop_indexes[device_number])
+  {
+    _local_start_indexes[device_number] += _gws;
+    _kernels[device_number].setArg(6, _local_start_indexes[device_number]);
+    return true;
+  }
+
+  if (reservePasswords(device_number))
+  {
+    _kernels[device_number].setArg(6, _local_start_indexes[device_number]);
+    _kernels[device_number].setArg(7, _local_stop_indexes[device_number]);
+    return true;
+  }
+
+  return false;
+}
+
+bool CLMarkovPassGen::reservePasswords(unsigned thread_number)
+{
+  _global_index_mutex.lock();
+  _local_start_indexes[thread_number] = _global_start_index;
+  _global_start_index += _resevation_size;
+  _global_index_mutex.unlock();
+
+  _local_stop_indexes[thread_number] = _local_start_indexes[thread_number]
+                                         + _resevation_size;
+
+  if (_local_start_indexes[thread_number] > _global_stop_index)
+    return false;
+
+  if (_local_stop_indexes[thread_number] > _global_stop_index)
+    _local_stop_indexes[thread_number] = _global_stop_index;
+
+  return true;
+
 }

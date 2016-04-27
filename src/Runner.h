@@ -79,15 +79,11 @@ private:
   unsigned _passwords_num_items;
   std::vector<cl::Buffer> _passwords_buffer;
 
-  std::vector<cl_uchar *> _flag;
-  size_t _flag_size;
-  std::vector<cl::Buffer> _flag_buffer;
-
   void createContext();
   void initGenerator();
   void initCracker();
 
-  void runThread(unsigned thread_number);
+  void runThread(unsigned device_number);
 
   void parseOptions(Options & options);
 };
