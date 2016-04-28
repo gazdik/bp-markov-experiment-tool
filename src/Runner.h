@@ -73,10 +73,7 @@ private:
   std::vector<cl::Kernel> _cracker_kernel;
   std::vector<cl::Device> _device;
 
-  std::vector<cl_uchar *> _passwords;
   cl_uint _passwords_entry_size;
-  size_t _passwords_size;
-  unsigned _passwords_num_items;
   std::vector<cl::Buffer> _passwords_buffer;
 
   void createContext();

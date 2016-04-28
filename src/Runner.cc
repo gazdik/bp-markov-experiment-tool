@@ -106,9 +106,6 @@ void Runner::createContext()
 
 Runner::~Runner()
 {
-  for (auto i : _passwords)
-    delete[] i;
-
   delete _passgen;
   delete _cracker;
 }
@@ -141,18 +138,12 @@ void Runner::initGenerator()
 
   // Create kernel's memory objects
   _passwords_entry_size = _passgen->MaxPasswordLength() + PASS_EXTRA_BYTES;
-  _passwords_num_items = _passwords_entry_size * _gws;
-  _passwords_size = _passwords_num_items * sizeof(cl_uchar);
+  size_t passwords_num_items = _passwords_entry_size * _gws;
+  size_t passwords_size = passwords_num_items * sizeof(cl_uchar);
 
   for (unsigned i = 0; i < num_devices; i++)
   {
-    cl_uchar *passwords = new cl_uchar[_passwords_num_items];
-    memset(passwords, 0, _passwords_size);
-    _passwords.push_back(passwords);
-
-    cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE, _passwords_size };
-    _command_queue[i].enqueueWriteBuffer(passwords_buffer, CL_FALSE, 0,
-                                         _passwords_size, passwords);
+    cl::Buffer passwords_buffer { _context, CL_MEM_READ_WRITE, passwords_size };
     _passwords_buffer.push_back(passwords_buffer);
   }
 
