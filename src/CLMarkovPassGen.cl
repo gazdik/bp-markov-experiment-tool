@@ -34,7 +34,6 @@ __kernel void markovGenerator (__global uchar *passwords, uint entry_size,
                     __constant ulong *permutations, uint max_threshold,
                     ulong index_start, ulong index_stop)
 {
-  uint max_length = entry_size - PASS_EXTRA_BYTES;
   size_t id = get_global_id(0);
   ulong global_index = index_start + id;
   __global uchar *password = passwords + id * entry_size;

@@ -127,8 +127,17 @@ void Runner::initGenerator()
       char>() };
 
   // Create and build program
-  cl::Program program { _context, source, true };
-  program.build("-Werror");
+  cl::Program program{ _context, source, true };
+  try {
+	  program.build("-Werror");
+  }
+  catch (cl::Error &err)
+  {
+	  cl::STRING_CLASS log;
+	  program.getBuildInfo(_device[0], CL_PROGRAM_BUILD_LOG, &log);
+	  cout << log << endl;
+	  exit(EXIT_FAILURE);
+  }
 
   // Create kernel's memory objects
   _passwords_entry_size = _passgen->MaxPasswordLength() + PASS_EXTRA_BYTES;
