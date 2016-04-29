@@ -221,6 +221,8 @@ void Runner::runThread(unsigned device_num)
     cracker_events.push_back(event);
 
     flag = _passgen->NextKernelStep(device_num);
+
+    cl::WaitForEvents(cracker_events);
   }
 }
 
