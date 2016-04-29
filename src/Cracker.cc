@@ -91,7 +91,8 @@ std::string Cracker::GetKernelName()
   return (_kernel_name);
 }
 
-void Cracker::InitKernel(std::vector<cl::Kernel> & kernels, std::vector<cl::CommandQueue> & queues,
+void Cracker::InitKernel(std::vector<cl::Kernel> & kernels,
+                         std::vector<cl::CommandQueue> & queues,
                          cl::Context& context)
 {
   for (int i = 0; i < kernels.size(); i++)
@@ -120,49 +121,33 @@ void Cracker::Details()
 
 void Cracker::PrintResults()
 {
-  cl_uchar *tmp_hash_table = new cl_uchar[_hash_table_size];
   unsigned total_num_elements = _num_entries * _num_rows;
   unsigned index;
-
+  unsigned num_cracked_passwords = 0;
+  vector<string> cracked_passwords;
 
   // Update flags in hash table
   for (unsigned i = 0; i < _cmd_queue.size(); i++)
   {
     _cmd_queue[i].enqueueReadBuffer(_hash_table_buffer[i], CL_TRUE, 0,
-                                    _hash_table_size, tmp_hash_table);
+                                    _hash_table_size, _flat_hash_table);
 
+    // Count cracked passwords
     for (unsigned i = 0; i < total_num_elements; i++)
     {
-      index = _entry_size * i + HT_FLAG_OFFSET;
+      index = _entry_size * i;
 
-      if (tmp_hash_table[index] == HT_FOUND)
+      if (_flat_hash_table[index + HT_FLAG_OFFSET] == HT_FOUND)
       {
-        _flat_hash_table[index] = HT_FOUND;
+        num_cracked_passwords++;
+        if (_print_passwords)
+          cracked_passwords.push_back(makeString(&_flat_hash_table[index]));
       }
-    }
-  }
-
-  delete[] tmp_hash_table;
-
-  // Count cracked passwords
-  unsigned num_cracked_passwords = 0;
-  vector<string> cracked_passwords;
-
-
-  for (unsigned i = 0; i < total_num_elements; i++)
-  {
-    index = _entry_size * i;
-
-    if (_flat_hash_table[index + HT_FLAG_OFFSET] == HT_FOUND)
-    {
-      num_cracked_passwords++;
-      if (_print_passwords)
-        cracked_passwords.push_back(makeString(&_flat_hash_table[index]));
     }
   }
 
   // Print results
   cout << "Cracked passwords: " << num_cracked_passwords << "\n";
-  for (auto pass: cracked_passwords)
+  for (auto pass : cracked_passwords)
     cout << pass << "\n";
 }
