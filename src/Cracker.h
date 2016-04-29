@@ -48,7 +48,7 @@ public:
   std::string GetKernelSource();
   std::string GetKernelName();
 
-  void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
+  void InitKernel(std::vector<cl::Kernel> & kernels, std::vector<cl::CommandQueue> & queue,
                   cl::Context & context);
 
   void Details();

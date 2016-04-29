@@ -42,41 +42,59 @@
 
 using namespace std;
 
-void CLMarkovPassGen::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
-                                 cl::Context& context, unsigned device_number)
+
+void CLMarkovPassGen::InitKernel(std::vector<cl::Kernel>& kernels,
+                                 std::vector<cl::CommandQueue>& queues,
+                                 cl::Context& context)
 {
-  _kernels.push_back(kernel);
+  _kernels = kernels;
 
-  _local_start_indexes.push_back(0);
-  _local_stop_indexes.push_back(0);
-  reservePasswords(device_number);
+  for (int dev_num = 0; dev_num < kernels.size(); dev_num++)
+  {
+    cl::Kernel & kernel = kernels[dev_num];
+    cl::CommandQueue & queue = queues[dev_num];
 
-  cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY, _markov_table_size
-      * sizeof(cl_uchar) };
-  queue.enqueueWriteBuffer(markov_table_buffer, CL_FALSE, 0, _markov_table_size * sizeof(cl_uchar), _markov_table);
-  _markov_table_buffer.push_back(markov_table_buffer);
+    _local_start_indexes.push_back(0);
+    _local_stop_indexes.push_back(0);
+    reservePasswords(dev_num);
 
-  cl::Buffer thresholds_buffer { context, CL_MEM_READ_ONLY, _max_length
-      * sizeof(cl_uint) };
-  queue.enqueueWriteBuffer(thresholds_buffer, CL_FALSE, 0, _max_length * sizeof(cl_uint), _thresholds);
-  _thresholds_buffer.push_back(thresholds_buffer);
+    cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY,
+        _markov_table_size * sizeof(cl_uchar) };
+    queue.enqueueWriteBuffer(markov_table_buffer, CL_TRUE, 0,
+                             _markov_table_size * sizeof(cl_uchar),
+                             _markov_table);
+    _markov_table_buffer.push_back(markov_table_buffer);
 
-  cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY, (_max_length + 2)
-      * sizeof(cl_ulong) };
-  queue.enqueueWriteBuffer(permutations_buffer, CL_FALSE, 0, (_max_length + 2) * sizeof(cl_ulong), _permutations);
-  _permutations_buffer.push_back(permutations_buffer);
+    cl::Buffer thresholds_buffer { context, CL_MEM_READ_ONLY, _max_length
+        * sizeof(cl_uint) };
+    queue.enqueueWriteBuffer(thresholds_buffer, CL_TRUE, 0,
+                             _max_length * sizeof(cl_uint), _thresholds);
+    _thresholds_buffer.push_back(thresholds_buffer);
 
-  kernel.setArg(2, markov_table_buffer);
-  kernel.setArg(3, thresholds_buffer);
-  kernel.setArg(4, permutations_buffer);
-  kernel.setArg(5, _max_threshold);
-  kernel.setArg(6, _local_start_indexes[device_number]);
-  kernel.setArg(7, _local_stop_indexes[device_number]);
+    cl::Buffer permutations_buffer { context, CL_MEM_READ_ONLY,
+        (_max_length + 2) * sizeof(cl_ulong) };
+    queue.enqueueWriteBuffer(permutations_buffer, CL_TRUE, 0,
+                             (_max_length + 2) * sizeof(cl_ulong),
+                             _permutations);
+    _permutations_buffer.push_back(permutations_buffer);
+
+    kernel.setArg(2, markov_table_buffer);
+    kernel.setArg(3, thresholds_buffer);
+    kernel.setArg(4, permutations_buffer);
+    kernel.setArg(5, _max_threshold);
+    kernel.setArg(6, _local_start_indexes[dev_num]);
+    kernel.setArg(7, _local_stop_indexes[dev_num]);
+  }
+
+  freeUnusedMemory();
 }
 
 CLMarkovPassGen::CLMarkovPassGen(Options & options) :
     _mask { options.mask }, _stat_file { options.stat_file }
 {
+  _thresholds = new cl_uint[MAX_PASS_LENGTH];
+  _permutations = new cl_ulong[MAX_PASS_LENGTH + 1];
+
   parseOptions(options);
 
   // Determine maximal threshold
@@ -93,7 +111,6 @@ CLMarkovPassGen::CLMarkovPassGen(Options & options) :
 
 CLMarkovPassGen::~CLMarkovPassGen()
 {
-  delete[] _markov_table;
 }
 
 unsigned CLMarkovPassGen::MaxPasswordLength()
@@ -445,4 +462,14 @@ bool CLMarkovPassGen::reservePasswords(unsigned thread_number)
 
   return true;
 
+}
+
+void CLMarkovPassGen::freeUnusedMemory()
+{
+  delete[] _thresholds;
+  _thresholds = nullptr;
+  delete[] _permutations;
+  _permutations = nullptr;
+  delete[] _markov_table;
+  _markov_table = nullptr;
 }

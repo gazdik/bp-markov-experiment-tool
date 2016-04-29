@@ -160,10 +160,7 @@ void Runner::initGenerator()
   }
 
   // Initialize generator's kernel
-  for (unsigned i = 0; i < _passgen_kernel.size(); i++)
-  {
-    _passgen->InitKernel(_passgen_kernel[i], _command_queue[i], _context, i);
-  }
+  _passgen->InitKernel(_passgen_kernel, _command_queue, _context);
 }
 
 void Runner::initCracker()
@@ -193,11 +190,8 @@ void Runner::initCracker()
     _cracker_kernel.push_back(kernel);
   }
 
-  // Initialize generator's kernel
-  for (unsigned i = 0; i < num_devices; i++)
-  {
-    _cracker->InitKernel(_cracker_kernel[i], _command_queue[i], _context);
-  }
+  // Initialize cracker's kernel
+  _cracker->InitKernel(_cracker_kernel, _command_queue, _context);
 }
 
 void Runner::runThread(unsigned device_num)
@@ -227,6 +221,8 @@ void Runner::runThread(unsigned device_num)
     cracker_events.push_back(event);
 
     flag = _passgen->NextKernelStep(device_num);
+
+    cl::WaitForEvents(cracker_events);
   }
 }
 

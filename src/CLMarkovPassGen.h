@@ -81,10 +81,10 @@ public:
    * @param kernel
    * @param command_queue
    * @param context
-   * @param step
    */
-  void InitKernel(cl::Kernel & kernel, cl::CommandQueue & queue,
-                  cl::Context & context, unsigned device_number);
+  void InitKernel(std::vector<cl::Kernel> & kernels,
+                  std::vector<cl::CommandQueue> & queues,
+                  cl::Context & context);
 
   /**
    * Set up parameters for next kernel step
@@ -139,7 +139,7 @@ private:
   /**
    * Precomputed number of permutations for every length
    */
-  cl_ulong _permutations[MAX_PASS_LENGTH + 1];
+  cl_ulong *_permutations;
   /**
    * Minimal password length
    */
@@ -151,7 +151,7 @@ private:
   /**
    * Number of characters per position
    */
-  cl_uint _thresholds[MAX_PASS_LENGTH];
+  cl_uint *_thresholds;
   /**
    * Maximum threshold
    */
@@ -182,6 +182,7 @@ private:
   unsigned findStatistics(std::ifstream & stat_file);
   void applyMask(SortElement *table[MAX_PASS_LENGTH][CHARSET_SIZE]);
   bool reservePasswords(unsigned thread_number);
+  void freeUnusedMemory();
 };
 
 #endif /* CLMARKOVPASSGEN_H_ */
