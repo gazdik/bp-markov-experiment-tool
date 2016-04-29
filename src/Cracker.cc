@@ -91,21 +91,27 @@ std::string Cracker::GetKernelName()
   return (_kernel_name);
 }
 
-void Cracker::InitKernel(cl::Kernel& kernel, cl::CommandQueue& queue,
+void Cracker::InitKernel(std::vector<cl::Kernel> & kernels, std::vector<cl::CommandQueue> & queues,
                          cl::Context& context)
 {
-  _cmd_queue.push_back(queue);
+  for (int i = 0; i < kernels.size(); i++)
+  {
+    cl::Kernel & kernel = kernels[i];
+    cl::CommandQueue & queue = queues[i];
 
-  cl::Buffer hash_table_buffer { context, CL_MEM_READ_WRITE, _hash_table_size };
-  queue.enqueueWriteBuffer(hash_table_buffer, CL_FALSE, 0, _hash_table_size,
-                           _flat_hash_table);
-  _hash_table_buffer.push_back(hash_table_buffer);
+    _cmd_queue.push_back(queue);
 
-  kernel.setArg(2, hash_table_buffer);
-  kernel.setArg(3, _num_rows);
-  kernel.setArg(4, _num_entries);
-  kernel.setArg(5, _entry_size);
-  kernel.setArg(6, _row_size);
+    cl::Buffer hash_table_buffer { context, CL_MEM_READ_WRITE, _hash_table_size };
+    queue.enqueueWriteBuffer(hash_table_buffer, CL_FALSE, 0, _hash_table_size,
+                             _flat_hash_table);
+    _hash_table_buffer.push_back(hash_table_buffer);
+
+    kernel.setArg(2, hash_table_buffer);
+    kernel.setArg(3, _num_rows);
+    kernel.setArg(4, _num_entries);
+    kernel.setArg(5, _entry_size);
+    kernel.setArg(6, _row_size);
+  }
 }
 
 void Cracker::Details()
