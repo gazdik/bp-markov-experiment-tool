@@ -200,7 +200,7 @@ void Runner::runThread(unsigned device_num)
   vector<cl::Event> cracker_events;
   cl::Event event;
 
-  bool flag = true;
+  bool flag = _passgen->NextKernelStep(device_num);
 
   while (flag)
   {
@@ -221,7 +221,6 @@ void Runner::runThread(unsigned device_num)
     cracker_events.push_back(event);
 
     flag = _passgen->NextKernelStep(device_num);
-
     cl::WaitForEvents(cracker_events);
   }
 }

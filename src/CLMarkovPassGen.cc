@@ -54,9 +54,9 @@ void CLMarkovPassGen::InitKernel(std::vector<cl::Kernel>& kernels,
     cl::Kernel & kernel = kernels[dev_num];
     cl::CommandQueue & queue = queues[dev_num];
 
-    _local_start_indexes.push_back(0);
+    // Invalid values to prevent kernel execution without reserved passwords
+    _local_start_indexes.push_back(1);
     _local_stop_indexes.push_back(0);
-    reservePasswords(dev_num);
 
     cl::Buffer markov_table_buffer { context, CL_MEM_READ_ONLY,
         _markov_table_size * sizeof(cl_uchar) };
