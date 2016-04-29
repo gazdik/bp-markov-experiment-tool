@@ -126,7 +126,7 @@ void Runner::initGenerator()
   // Create and build program
   cl::Program program{ _context, source, true };
   try {
-	  program.build("-Werror");
+	  program.build("-Werror -cl-std=CL1.2");
   }
   catch (cl::Error &err)
   {
@@ -176,7 +176,17 @@ void Runner::initCracker()
 
   // Create and build program
   cl::Program program { _context, source, true };
-  program.build("-Werror");
+  try
+  {
+    program.build("-Werror -cl-std=CL1.2");
+  }
+  catch (cl::Error &err)
+  {
+	  cl::STRING_CLASS log;
+	  program.getBuildInfo(_device[0], CL_PROGRAM_BUILD_LOG, &log);
+	  cout << log << endl;
+	  exit(EXIT_FAILURE);
+  }
 
   // Create kernels
   for (unsigned i = 0; i < num_devices; i++)
