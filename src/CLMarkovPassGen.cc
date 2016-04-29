@@ -405,7 +405,7 @@ void CLMarkovPassGen::printMarkovTable()
 void CLMarkovPassGen::SetGWS(std::size_t gws)
 {
   _gws = gws;
-  _resevation_size = 100 * _gws;
+  _resevation_size = 10 * _gws;
 }
 
 bool CLMarkovPassGen::NextKernelStep(unsigned device_number)
