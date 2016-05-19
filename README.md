@@ -18,13 +18,19 @@ Okrem toho sú vyžadované OpenCL ovládače vo verzií 1.2 a vyššej.
 
 #### Linux
 
+```
+#!bash
 cmake -G"Unix Makefiles"
 make
+```
 
 #### Windows
 
-cmake -G"Visual Studio 2013 Win64"
+```
+#!bash
+cmake -G"Visual Studio 2013"
 make
+```
 
 Spustiteľný súbor sa nachádza po preklade v priečinku `bin/`
 
@@ -36,6 +42,7 @@ od nástroja Wrathion.
 #### Príklad použitia:
 
 ```
+#!bash
 ./experimentTool -d dictionaries/rockyou_1-7.dic -s stats/rockyou.wstat
 -t 25 -M classic -l 1:7
 ```
