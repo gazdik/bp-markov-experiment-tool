@@ -1,8 +1,24 @@
 /*
- * HashTable.h
+ * Copyright (C) 2016 Peter Gazdik
  *
- *  Created on: Apr 12, 2016
- *      Author: gazdik
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ *
  */
 
 #ifndef HASHTABLE_H_
@@ -27,12 +43,38 @@
 class HashTable
 {
 public:
+  /**
+   * Construct hash table
+   * @param num_words Number of words in dictionary (only prevents rehashing)
+   * @param max_load_factor Average number of entries per bucket (row)
+   */
   HashTable(unsigned num_words, float max_load_factor = 1.0);
   ~HashTable();
 
+  /**
+   * Insert new string into hash table
+   * @param value
+   */
   void Insert(std::string & value);
+
+  /**
+   * Get length of single entry in bytes (maxLength + 1)
+   */
   unsigned GetEntryLength();
+
+  /**
+   * Get number of buckets (rows in hash table)
+   */
   unsigned GetBucketCount();
+
+  /**
+   * Serialize C++ hash table into flat array for GPU
+   * @param hash_table
+   * @param num_rows
+   * @param num_entries
+   * @param entry_size
+   * @param row_size
+   */
   unsigned Serialize(cl_uchar **hash_table, cl_uint & num_rows,
                      cl_uint & num_entries, cl_uint & entry_size,
                      cl_uint & row_size);

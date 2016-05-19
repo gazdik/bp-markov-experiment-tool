@@ -39,31 +39,30 @@ using namespace std;
 struct Options : Runner::Options
 {
   bool help = false;
-//  bool verbose = false;
   bool list_platforms = false;
 };
 
 const char * help_msg = "clMarkovGen [OPTIONS]\n\n"
 		"Informations:\n"
-		"   -h, --help              prints this help\n"
-		"   -v, --verbose           verbose mode\n"
-    "   --list-platforms        prints all available OpenCL platforms\n"
+		"   -h, --help              display this help and exit\n"
+		"   -v, --verbose           enable verbose mode\n"
+    "   --list-platforms        display all available OpenCL platforms\n"
     "Common:\n"
     "   -D, --devices=platform[:device[,device]]\n"
     "         - platform - platform number (default 0),\n"
-    "         - device - device number (default all available GPU devices)\n"
-    "   -g, --gws               global work size (default 10240000)\n"
-    "Cracker:\n"
-		"   -d, --dictionary        dictionary with passwords to 'crack'\n"
+    "         - device - device number (default all available devices)\n"
+    "   -g, --gws               global work size for all devices (default 1024000)\n"
+    "Experiments:\n"
+		"   -d, --dictionary        dictionary with passwords for evaluation\n"
     "   --load-factor           maximal load factor for the hash table (default 1) \n"
-    "   -p, --print             prints cracked passwords\n"
+    "   -p, --print             print cracked passwords\n"
 		"Generator:\n"
-		"   -s, --statistics        file with statistics\n"
+		"   -s, --statistics        file with statistics for a Markov model\n"
 		"   -t, --thresholds=glob[:pos]\n"
 		"                           number of characters per position\n"
 		"         - glob - global value for every position in password\n"
     "         - pos - positional comma-separated values(overwrites global value)\n"
-		"   -l, --length=min:max    length of password (default 1:64)\n"
+		"   -l, --length=min:max    length of password (default 1:50)\n"
 		"   -m, --mask              mask\n"
     "   -M, --model             type of Markov model:\n"
     "         - classic - First-order Markov model (default)\n"

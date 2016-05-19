@@ -46,7 +46,7 @@ class Runner
 public:
   struct Options : public CLMarkovPassGen::Options, Cracker::Options
   {
-    unsigned gws = 10240000;
+    unsigned gws = 1024000;
     std::string devices = "0";
     bool verbose = false;
   };
@@ -54,8 +54,14 @@ public:
   Runner(Options & options);
   ~Runner();
 
+  /**
+   * Run experiment
+   */
   void Run();
 
+  /**
+   * Print detailed informations about experiment
+   */
   void Details();
 
 private:

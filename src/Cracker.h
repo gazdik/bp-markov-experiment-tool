@@ -52,6 +52,9 @@ public:
                   cl::Context & context);
 
   void Details();
+  /**
+   * Print number of cracked passwords
+   */
   void PrintResults();
 
 private:

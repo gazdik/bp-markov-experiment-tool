@@ -25,7 +25,7 @@
 #define CONSTANTS_H_
 
 const unsigned MIN_PASS_LENGTH = 1;
-const unsigned MAX_PASS_LENGTH = 64;
+const unsigned MAX_PASS_LENGTH = 50;
 const unsigned CHARSET_SIZE = 256;
 
 
