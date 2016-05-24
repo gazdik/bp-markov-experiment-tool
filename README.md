@@ -1,4 +1,4 @@
-# markovExperimentTool
+# Markov Experiment Tool
 
 Nástroj pre vyhodnotenie úspešnosti pri generovaní hesiel s
 využitím Markovho modelu. Pomocou tohoto nástroja boli vykonané všetky merania popísané v [bakalárskej práci](https://goo.gl/mDPK2M) zaoberajúcej sa využitím heuristík pri obnove hesiel na GPU.
